@@ -1,17 +1,24 @@
 ---
 title: "Flight LH790 (MUC - SIN)"
 author: Christian Jaehnert
-date: '2023-11-24'
+date: '2023-11-26'
 format: html
 slug: 
 categories:
-  - aviation
+  - R
   - ggplot
   - tidyverse
+  - aviation
+  - MUC
+  - SIN
+  - flights
 tags:
+  - R
+  - ggplot
   - aviation
   - travel
-summary: "xxx"
+  
+summary: "This shows an analyis to book the best side of the plane to approach Singapore."
 ---
 
 ```{r setup}
