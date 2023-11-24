@@ -3,11 +3,19 @@ project:
 
 website:
   title: "FUNAlytics Blog"
+  site-url: https://funalytics.de 
+  description: "This is Christian Jaehnert's personal Blog."
   navbar:
-    left:
-      - href: index.qmd
-        text: Home
+
+    right:
+      - posts.qmd
       - about.qmd
+      - icon: linkedin        
+        href: https://www.linkedin.com/in/christian-jaehnert/
+  
+  page-footer:
+    center: 
+      - text: "(c) Christian Jaehnert"
 
 format:
   html:
@@ -19,3 +27,5 @@ editor: visual
 
 execute:
   freeze: auto
+  
+cookie-consent: true

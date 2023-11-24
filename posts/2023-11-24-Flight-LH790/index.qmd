@@ -1,0 +1,566 @@
+---
+title: "Flight LH790 (MUC - SIN)"
+author: Christian Jaehnert
+date: '2023-11-24'
+format: html
+slug: 
+categories:
+  - aviation
+  - ggplot
+  - tidyverse
+tags:
+  - aviation
+  - travel
+summary: "xxx"
+---
+
+```{r setup}
+#| include: false
+library(knitr)
+knitr::opts_chunk$set(cache = TRUE, cache.lazy = FALSE, warning = FALSE, 
+                      message = FALSE, echo = FALSE, dpi = 180,
+                      fig.width = 7, fig.height = 5)
+library(tidyverse)
+library(silgelib)
+library(janitor)
+library(lubridate)
+library(ggmap)
+library(zoo)
+library(geosphere)
+
+theme_set(theme_plex())
+update_geom_defaults("rect", list(fill = "#0032a0", alpha = 0.8))
+update_geom_defaults("line", list(color = "#0032a0", alpha = 0.8))
+
+```
+
+## Introduction
+
+Hello, it's been a while since my last post! You remember the bears in Canada? 🐻
+
+However, both this post and the last one share a common theme: they're about my upcoming travels.\
+I'm eagerly anticipating my trip to Singapore. As a fan of the city, I want to start enjoying it right from the moment of my arrival, which means catching a glimpse of the skyline as the plane approach Changi Airport.
+
+So, which side of the plane should I sit on to increase my chances of this great view?
+
+![*Skyline Singapore*](singapore_skyline.jpg){fig-alt="Photo from Swapnil Bapat on Unsplash.com" fig-align="center"}
+
+**Thankfully, data is here to help! I invite you to join me on this analytical journey.**
+
+## Data
+
+My flight to Singapore is with Lufthansa, departing from Munich. I'll be on flight LH790, a service offered six times per week using the very fuel-efficient A350.
+
+Aviation is a passion of mine, so I have a gold membership at [www.flightradar24.com](http://www.flightradar24.com/).\
+I downloaded data for the last 80 days' flights of LH790. Let's first look at the variables and the date range.
+
+::: {.panel-tabset .nav-pills}
+## Variables
+
+```{r}
+file_names <- list.files(pattern = "\\.csv$")
+
+all_data <- map_dfr(file_names, function(file) {
+  read_csv(file) %>% 
+    mutate(FileName = file)
+}) %>% 
+  clean_names() %>% 
+  separate(position,into = c("lat","lon"), sep = ",", convert =  TRUE) %>% 
+  mutate(weekday = wday(utc, week_start = 1, label = TRUE),
+         weekday = as.factor(weekday),
+         file_name = if_else(file_name == "LH790_32e79440.csv",
+                             "LH790_32e5d438.csv", file_name)) %>% 
+  #filter(altitude = 0) %>% 
+  arrange(timestamp) %>% 
+  group_by(file_name) %>% 
+  mutate(weekday_start = wday(utc[1], week_start = 1, label = TRUE),
+         date_start = as.Date(utc[1]), 
+         label = paste("LH790", date_start)) %>% 
+  ungroup()
+
+all_data %>% 
+  glimpse()
+```
+
+## Flight Dates
+
+```{r}
+all_data %>% 
+  select(date_start) %>% 
+  distinct() %>% 
+  pull(date_start) %>% 
+  print()
+
+```
+:::
+
+The data is already quite impressive. From just 80 flights, I've gathered 115,502 data points, averaging about 1,444 per flight. So, what do we have?
+
+The timestamp and UTC provide the time information. Latitude (Lat) and Longitude (Lon) show the position of the plane at a certain timestamp/UTC. There's also data on speed (in knots), altitude (in feet), and direction (heading) for that moment.
+
+I've already derived some additional variables that might be useful or interesting, such as the weekday, the weekday of departure from Munich (since the date line is crossed during the flight), and a unique label for each flight.
+
+## Speed & Altitude
+
+Lets scatter both variables, speed and altitude, from the 80 flights.
+
+```{r}
+all_data %>% 
+  ggplot(aes(x = speed, y = altitude)) +
+  geom_point(alpha = 0.4) +
+  labs(y = "Altitude in ft", x = "Speed in knots") +
+  scale_y_continuous(labels = scales::number_format())
+```
+
+The plot of speed versus altitude is intriguing. It clearly shows takeoff and landing phases (speed \> 0 at altitude = 0). It appears the plane takes off at around 150 knots, as that's when altitude begins to increase (vice versa for landing).
+
+There seems to be a linear relationship between speed and altitude, which is intuitive. But why does it form a funnel shape? This warrants further investigation. My theory is that there's a different relationship (scatter) during the three flight stages:
+
+1.  Takeoff/Climb
+
+2.  Cruise
+
+3.  Landing/Descent
+
+I don't have stage information in the dataset, so I derived it, after removing some of the strange points in the scatter plot (very low speed at high altitude). See the following code.
+
+```{r, echo = TRUE, collapse = TRUE}
+#| code-fold: true
+#| code-summary: "Click here to unhide/hide the code."
+
+all_data <- all_data %>% 
+  filter(!(altitude > 100 & speed < 100)) %>% 
+  filter(!(altitude > 30000 & speed < 400)) %>% 
+  group_by(file_name) %>% 
+  arrange(timestamp) %>%
+  mutate(altitude_before = lag(altitude, default = 0),
+         altitude_after = lead(altitude))  %>% 
+  filter(!(altitude == 0 & altitude_before == 0 & altitude_after == 0)) 
+
+all_data <- all_data %>% 
+  group_by(label) %>% 
+  arrange(utc, .by_group = TRUE) %>% 
+  mutate(startzeit = utc[1], 
+         flugdauer = difftime(utc, startzeit, units = "mins"),
+         flugdauer = as.numeric(flugdauer))
+
+
+takeoff_threshold = 10    
+landing_threshold = -10
+
+all_data <- all_data %>% 
+  mutate(gradient = c(NA, diff(altitude) / diff(flugdauer)),
+         smooth_gradient = rollmean(gradient, 5, fill = NA)) %>% 
+  mutate(phase = case_when(
+    smooth_gradient > takeoff_threshold ~ 'Climb',
+    smooth_gradient < landing_threshold ~ 'Descend',
+    TRUE ~ 'Cruise'
+  ))
+```
+
+Whats going on in the code? After cleaning up of the anomalies in the data, I focused on calculating the relative length of the flight since takeoff. To clarify, I'm considering 'takeoff' as the last moment when the altitude is zero and eliminating all prior data points, effectively excluding the taxiing phase (same applies for the landing).
+
+The next step is to calculate the gradient, which involves correlating the change in altitude with the change in the relative length of the flight. The sign of this gradient indicates whether the plane is ascending or descending between two points. After this, I smooth out the gradient for a clearer analysis. The sign of this gradient indicates whether the flight is ascending or descending.
+
+Let's now revisit the plot, this time analyzing it by the flight phase.
+
+```{r}
+all_data %>% 
+  ggplot(aes(x = speed, y = altitude, color = phase, group = phase)) +
+  geom_point(alpha = 0.4) +
+  labs(y = "Altitude in ft", x = "Speed in knots", color = "Phase") +
+  scale_y_continuous(labels = scales::number_format())
+```
+
+The results are fascinating! The climb phase (red) requires higher speed to gain altitude, as governed by physical laws, as it sits more towards the right side (higher speed).
+
+What's particularly striking is the precision with which the plane maintains altitude at different speeds during the cruise phase (green lines).
+
+## Altitude and Duration
+
+I need to examine this aspect of the stable altitude more closely.
+
+That's why I'm now plotting the altitude of the plane over the flight time (in minutes)!
+
+::: {.panel-tabset .nav-pills}
+## All Flights
+
+```{r}
+all_data %>% 
+  ggplot(aes(x = flugdauer, y = altitude, color = phase)) +
+  geom_point(shape = "circle", size = 0.5, alpha= 0.8) +
+  facet_wrap(vars(label)) +
+  theme_plex() +
+  labs(x = "Flighttime in minutes", y = "Altitude in ft", color = "Phase") +
+  theme(strip.text.x = element_text(size = 4),
+        strip.text.y = element_text(size = 4),
+        axis.text.x = element_text(size = 5),
+        axis.text.y = element_text(size = 5)) +
+  scale_y_continuous(labels = scales::number_format())
+```
+
+## Random Flights
+
+```{r}
+set.seed(123)
+selection <- all_data %>% 
+  select(label) %>% 
+  distinct() %>% 
+  ungroup() %>% 
+  slice_sample(n=12) %>% 
+  arrange(label) %>% 
+  pull(label)
+  
+all_data %>% 
+  filter(label %in% selection) %>% 
+  ggplot(aes(x = flugdauer, y = altitude, color = phase)) +
+  geom_point(shape = "circle", size = 0.5, alpha= 0.8) +
+  facet_wrap(vars(label)) +
+  theme_plex() +
+  labs(x = "Flighttime in minutes", y = "Altitude in ft", color = "Phase") +
+  theme(strip.text.x = element_text(size = 8),
+        strip.text.y = element_text(size = 8),
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6)) +
+  scale_y_continuous(labels = scales::number_format())
+
+```
+:::
+
+It's amazing to see how the plane maintains a consistent altitude over an extended period of time. Yes, I'm aware there are minor deviations, or even significant ones during turbulence. The plot here is somewhat smoothed out due to the resolution of the measurement and also the range of the Y-axis, but I'm still impressed.
+
+Upon further analysis, I noticed an anomaly on the flight dated November 19th. A quick check on Flightradar24 revealed that on that day, the plane was diverted to Kuala Lumpur after two unsuccessful landing attempts due to bad weather at the airport. I'll exclude this flight from the rest of the analysis.
+
+```{r}
+
+all_data <- all_data %>% 
+  filter(!file_name == "LH790_32e5d438.csv") 
+
+```
+
+## Approaching Singapore
+
+Now, let's address my initial question of the right side of the plane. From the flight path I examined the final descent phase, specifically when the plane was below 1,000 feet in altitude, because at that stage I would expect that the plane is already fully aligned with the runway! Lets first see if this expecation is correct!
+
+::: {.panel-tabset .nav-pills}
+## All Flights
+
+```{r}
+all_data %>%
+  group_by(label) %>% 
+  filter(phase == "Descend" & altitude < 1000) %>% 
+  ggplot(aes(x = lon, y = lat)) +
+  geom_point(shape = "circle", colour = "#0032a0", size = 0.5) +
+  facet_wrap(vars(label), scales = "free") +
+  geom_point(aes(x = 103.989441, y = 1.359167), color = "#45a13f", size = 2) +
+  theme_plex() +
+  theme(strip.text.x = element_text(size = 4),
+        strip.text.y = element_text(size = 4),
+        axis.text.x = element_text(size = 5),
+        axis.text.y = element_text(size = 5)) +
+  labs(x = "Longitude", y = "Langitude")
+
+```
+
+## Random Flights
+
+```{r}
+
+all_data %>%
+  filter(label %in% selection) %>% 
+  group_by(label) %>% 
+  filter(phase == "Descend" & altitude < 1000) %>% 
+  ggplot(aes(x = lon, y = lat)) +
+  geom_point(shape = "circle", colour = "#0032a0", size = 0.5) +
+  facet_wrap(vars(label), scales = "free") +
+  geom_point(aes(x = 103.989441, y = 1.359167), color = "#45a13f", size = 2) +
+  theme_plex() +
+  theme(strip.text.x = element_text(size = 8),
+        strip.text.y = element_text(size = 8),
+        axis.text.x = element_text(size = 5),
+        axis.text.y = element_text(size = 5)) +
+  labs(x = "Longitude", y = "Langitude")
+```
+:::
+
+The green dot represents Singapore Airport's official location. You can see that, at this altitude, the plane is perfectly aligned with the runway (note: there is multiple runways at Singapore, thats why the line is shifted from day to day). This leads to the next idea that one could analyze which runway is most frequently used by this flight for landing, but that would be going too far.
+
+The data gives a good overview of the approaches! No we need to understand the local circumstances.
+
+## Optimal Seating Side for the Skyline View
+
+Here's an overview of the local situation - regarding the airport's location relative to the city. If the approach is from the southwest (indicated by the purple arrow), then the left side of the plane offers a good view of the skyline. Conversely, during a northeast approach (orange arrow), sitting on the right side is advisable to at least see some part of the city - even if it's not the impressive skyline.
+
+![](images/Folie1.png){fig-align="center"}
+
+To determine the best seat for a view, I classified each approach based on the mean latitude. If the mean latitude of an approach is smaller than that of the airport, the approach is from the northeast. If it's higher, the approach is from the southeast.
+
+```{r, echo = TRUE, collapse=TRUE}
+#| code-fold: true
+#| code-summary: "Click here to unhide/hide the code."
+
+flights_direction <- all_data %>%
+  group_by(label) %>% 
+  filter(phase == "Descend" & altitude < 1000) %>% 
+  group_by(label) %>%
+  summarize(approach_direction = if_else(mean(lat) > 1.359167, 
+                                         'north-east', 
+                                         'south-west'))
+```
+
+Now, all I need to do is classify each approach to easily tally them up.
+
+Here's the concept: if the average latitude of the approach is less than the latitude of Singapore airport, then the approach is likely from the northeast. Conversely, if it's higher, the approach is probably from the southeast. Let's calculate and see what the results show.
+
+::: {.panel-tabset .nav-pills}
+## All Flights
+
+```{r}
+all_data %>%
+  left_join(flights_direction) %>%
+  group_by(label) %>% 
+  filter(phase == "Descend" & altitude < 1000) %>% 
+  ggplot(.) +
+  aes(x = lon, y = lat, colour = approach_direction) +
+  geom_point(shape = "circle", size = 0.5) +
+  facet_wrap(vars(label), scales = "free") +
+  geom_point(aes(x = 103.989441, y = 1.359167), color = "#45a13f", size = 2) +
+  theme(strip.text.x = element_text(size = 8),
+        strip.text.y = element_text(size = 8),
+        axis.text.x = element_text(size = 5),
+        axis.text.y = element_text(size = 5)) +
+   labs(x = "Longitude", y = "Langitude", color = "Approach")
+```
+
+## Random Flights
+
+```{r}
+all_data %>%
+  filter(label %in% selection) %>% 
+  left_join(flights_direction) %>%
+  group_by(label) %>% 
+  filter(phase == "Descend" & altitude < 1000) %>% 
+  ggplot(.) +
+  aes(x = lon, y = lat, colour = approach_direction) +
+  geom_point(shape = "circle", size = 0.5) +
+  facet_wrap(vars(label), scales = "free") +
+  geom_point(aes(x = 103.989441, y = 1.359167), color = "#45a13f", size = 2) +
+  theme(strip.text.x = element_text(size = 8),
+        strip.text.y = element_text(size = 8),
+        axis.text.x = element_text(size = 5),
+        axis.text.y = element_text(size = 5)) +
+   labs(x = "Longitude", y = "Langitude", color = "Approach")
+```
+
+## Result
+
+```{r}
+all_data %>%
+  left_join(flights_direction) %>%
+  select(label, approach_direction) %>% 
+  distinct() %>% 
+  ungroup() %>% 
+  count(approach_direction) %>% 
+  mutate(approach = "Approach",
+         approach_direction = fct_reorder(approach_direction, n)) %>% 
+  ggplot(aes(x = approach, y = n, fill = approach_direction, label = n)) +
+  geom_col() +
+  geom_label(position = position_stack(0.5), show.legend = FALSE) +
+  labs(x = "", y = "Count", fill = "Direction of approach")
+```
+:::
+
+It turns out, disappointingly, that only \~ 25% of the 80 flights approached from the southwest, the direction offering a view of the skyline. However, to maximize my chances, I should choose a seat on the left-hand side of the plane. That's what I'll aim for!
+
+## Flight Duration
+
+To conclude this blog post, I'll examine the duration of the flight. It's scheduled to last 12 hours and 5 minutes, or 720 minutes. Lets see the distribution across all flights in a box plot.
+
+```{r}
+all_data %>% 
+  group_by(label) %>% 
+  summarise(flighttime = max(flugdauer)) %>% 
+  ggplot(aes(x = "LH790", y=flighttime)) +
+  geom_boxplot() +
+  labs(y = "Flighttime in minutes", x = "")
+```
+
+There's one outlier at 760 minutes, surpassing the scheduled duration. The boxplot shows that 50% of the flights over the past 80 days took less than 700 minutes, while the other half took more. The majority fell between 690 and 717 minutes, which is either below or close to the scheduled time.
+
+But what accounts for these differences? In analyzing this plot, it's important to consider that while it provides a snapshot of flight durations, further context would be needed to understand the specific causes of a longer or shorter flight duration, such as weather conditions, air flow, air traffic control restrictions, or other operational factors.
+
+Lets at least check the aspect of air traffic control restrictions by analyzing holding patterns.
+
+## Holdings
+
+To analyze holding patterns, I will examine the final 30 minutes of each flight. \
+Let's plot their routes for further insights.
+
+::: {.panel-tabset .nav-pills}
+## All Flights
+
+```{r}
+all_data %>%
+  group_by(label) %>%
+  mutate(remain_time = max(flugdauer) - flugdauer) %>% 
+  filter(remain_time <= 30) %>% 
+  ggplot(aes(x = lon, y = lat)) +
+  geom_point(shape = "circle", colour = "#0032a0", size = 0.5) +
+  facet_wrap(vars(label), scales = "free") +
+  geom_point(aes(x = 103.989441, y = 1.359167), color = "#45a13f", size = 2) +
+  theme(strip.text.x = element_text(size = 8),
+        strip.text.y = element_text(size = 8),
+        axis.text.x = element_text(size = 5),
+        axis.text.y = element_text(size = 5)) +
+  labs(x = "Longitude", y = "Langitude")
+```
+
+## Random Flights
+
+```{r}
+all_data %>%
+  filter(label %in% selection) %>% 
+  group_by(label) %>%
+  mutate(remain_time = max(flugdauer) - flugdauer) %>% 
+  filter(remain_time <= 30) %>% 
+  ggplot(aes(x = lon, y = lat)) +
+  geom_point(shape = "circle", colour = "#0032a0", size = 0.5) +
+  facet_wrap(vars(label), scales = "free") +
+  geom_point(aes(x = 103.989441, y = 1.359167), color = "#45a13f", size = 2) +
+  theme(strip.text.x = element_text(size = 8),
+        strip.text.y = element_text(size = 8),
+        axis.text.x = element_text(size = 5),
+        axis.text.y = element_text(size = 5)) +
+  labs(x = "Longitude", y = "Langitude")
+
+```
+:::
+
+Some flights exhibit distinct holding patterns prior to landing, identifiable by their bow-shaped paths.
+
+## Derivation of Holdings
+
+To identify holding patterns, the focus is narrowed to the last 30 minutes of each flight, during which significant changes in the bearing could indicate circling or looping maneuvers. The analysis starts by organizing the flight data chronologically for each flight. The bearing, or direction of travel, from one point to the next is calculated for the entire flight path. If there is a high number of consecutive changes in the bearing, this might point to a holding pattern.
+
+```{r}
+all_data <- all_data %>%
+  arrange(label, utc) %>% #
+  mutate(lead_lat = lead(lat),
+         lead_lon = lead(lon)) %>%
+  rowwise() %>% 
+  mutate(bearing = if_else(is.na(lead_lat) | is.na(lead_lon), 
+                           NA, 
+                           bearing(c(lon, lat), c(lead_lon, lead_lat)))) %>%
+  ungroup() 
+
+```
+
+To see if the indicator works, lets check with the randomly chosen flights.
+
+```{r}
+all_data %>%
+  filter(label %in% selection) %>% 
+  group_by(label) %>%
+  mutate(
+    remain_time = max(flugdauer) - flugdauer,
+    change_in_bearing = c(NA, diff(bearing))) %>%
+  filter(remain_time <= 30) %>%
+  mutate(in_holding_pattern = abs(change_in_bearing) > 1) %>% 
+  ggplot(aes(x = lon, y = lat, color = in_holding_pattern)) +
+  geom_point(shape = "circle", size = 0.5) +
+  facet_wrap(vars(label), scales = "free") +
+  geom_point(aes(x = 103.989441, y = 1.359167), color = "#45a13f", size = 2) +
+  theme(strip.text.x = element_text(size = 8),
+        strip.text.y = element_text(size = 8),
+        axis.text.x = element_text(size = 5),
+        axis.text.y = element_text(size = 5)) +
+  labs(x = "Longitude", y = "Langitude", color = "Holding")
+
+
+```
+
+That looks quite promising. I've experimented a bit and established a rule: if there are more than 30 consecutive points showing a change in direction, I classify the flight as one executing a holding pattern.
+
+```{r}
+
+holding_pattern <- all_data %>%
+  group_by(label) %>%
+  mutate(
+    remain_time = max(flugdauer) - flugdauer,
+    change_in_bearing = c(NA, diff(bearing))) %>%
+  filter(remain_time <= 30) %>%
+  mutate(in_holding_pattern = abs(change_in_bearing) > 1) %>% 
+  group_by(label) %>% 
+  arrange(utc, .by_group = TRUE) %>% 
+  mutate(row_id = row_number()) %>%
+  group_by(label, grp = with(rle(in_holding_pattern), rep(seq_along(lengths), lengths))) %>%
+  mutate(consecutive_count = n()) %>%
+  ungroup() %>% 
+  select(-row_id, -grp) %>% 
+  group_by(label) %>% 
+  summarise(max_consecutive_count_last_30_min = max(consecutive_count))
+
+all_data %>%
+  filter(label %in% selection) %>% 
+  group_by(label) %>%
+  mutate(remain_time = max(flugdauer) - flugdauer) %>% 
+  filter(remain_time <= 30) %>% 
+  left_join(holding_pattern) %>% 
+  mutate(holding_pattern = if_else(max_consecutive_count_last_30_min > 30, "Hold", "Non-Hold")) %>% 
+  ggplot(aes(x = lon, y = lat, color = holding_pattern)) +
+  geom_point(shape = "circle", size = 0.5) +
+  facet_wrap(vars(label), scales = "free") +
+  geom_point(aes(x = 103.989441, y = 1.359167), color = "#45a13f", size = 2) +
+  theme_plex() +
+  theme(strip.text.x = element_text(size = 8),
+        strip.text.y = element_text(size = 8),
+        axis.text.x = element_text(size = 5),
+        axis.text.y = element_text(size = 5)) +
+  labs(x= "Longitude", y = "Latitude", color = "Holding Pattern")
+
+```
+
+The approach seems to work reasonably well, though undoubtedly there could be more sophisticated solutions.
+
+Let's proceed with this method and aim to answer the question: 
+Are flights with a holding pattern more susceptible to a longer flight duration?
+
+```{r}
+all_data %>%
+  group_by(label) %>%
+  mutate(remain_time = max(flugdauer) - flugdauer) %>% 
+  filter(remain_time <= 30) %>% 
+  left_join(holding_pattern) %>% 
+  mutate(holding_pattern = if_else(max_consecutive_count_last_30_min > 30, 
+                                   "Hold", 
+                                   "Non-Hold")) %>% 
+  group_by(label) %>% 
+  arrange(utc, .by_group = TRUE) %>% 
+  slice(n()) %>% 
+  ggplot(aes(x = holding_pattern, y = flugdauer)) +
+  geom_boxplot() +
+  labs(x = "Holding Pattern" , y = "Flight duration in minutes")
+
+all_data %>%
+  group_by(label) %>%
+  mutate(remain_time = max(flugdauer) - flugdauer) %>% 
+  filter(remain_time <= 30) %>% 
+  left_join(holding_pattern) %>% 
+  mutate(holding_pattern = if_else(max_consecutive_count_last_30_min > 30, 
+                                   "Hold", 
+                                   "Non-Hold")) %>% 
+  group_by(label) %>% 
+  arrange(utc, .by_group = TRUE) %>% 
+  slice(n()) %>% 
+  group_by(holding_pattern) %>% 
+  summarise(mean_fligth_duration = mean(flugdauer))
+
+  
+```
+
+Yes, looks like that, when flying a holding pattern, the flight takes on average slightly longer (but the majority still below the scheduled duration).
+
+## Conclusion
+
+This was again fun to analyze. Hope you enjoyed it!
+I will definitely sit on the left side of the plane (thumbs pressed for clear view) and not worry to much about holding patterns since they are pretty usual on this fligth.

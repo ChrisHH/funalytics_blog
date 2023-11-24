@@ -1,9 +1,20 @@
 ---
-title: "FUNAlytics"
+title: ""
+type: website
 ---
 
-This is my new blog!!!
+::: grid
+::: g-col-6
+![](christian.JPG){width="300"}
+:::
 
-And this is also new!
+::: g-col-6
+## Hi, I'm Christian!
 
-Test Test Test
+I am living and working in Hamburg. I am passionate about Data Analytics and R. I am holding a Masters Degree in Big Data & Business Analytics.
+
+To get started, you can check out my [Blog](/posts.html).
+
+You can find me on [LinkedIN](https://www.linkedin.com/in/christian-jaehnert/). Feel free to reach out to me!
+:::
+:::
