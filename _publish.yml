@@ -1,0 +1,4 @@
+- source: project
+  netlify:
+    - id: 7e84eee3-e713-4419-889d-12d10a831c4a
+      url: 'https://funalytics.de'

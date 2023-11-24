@@ -5,5 +5,7 @@ title: "About"
 About this site
 
 ```{r}
-1 + 1
+1 + 1 + 1 + 1
 ```
+
+Hello, this is me!
