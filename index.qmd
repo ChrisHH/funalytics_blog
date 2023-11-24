@@ -5,18 +5,25 @@ type: website
 
 ::: grid
 ::: g-col-6
-![](christian.JPG){width="300"}
+![](christian.JPG){fig-align="left" width="400" style="margin-top: 80px;"}
 :::
 
 ::: g-col-6
 ## Hi, I'm Christian! 👋
 
-I am living and working in Hamburg, Germany. I am passionate about Data Analytics, Machine Learning and Artificial Intelligence and do lots of this stuff in R.
+I'm based in the vibrant city of Hamburg, Germany, where I live and work immersed in the world of Data Analytics, Machine Learning, and Artificial Intelligence. My passion for these fields isn't just a profession; it's a pursuit that drives me to explore, innovate, and excel.
 
-I am holding a Masters Degree in Big Data & Business Analytics since May 2021.
+My tool of choice for unraveling the complexities of data is R, a powerful language that enables me to turn raw data into meaningful insights.
+
+In the early 2000s, I embarked on my academic journey, culminating in a diploma in Medical Informatics & Biomedical Engineering. Fast forward to 2021, I further enriched my academic portfolio with a Master's degree in Big Data and Business Analytics. Throughout my professional voyage, I have meticulously honed my skills in market research, mastering the art from its foundational principles to its most intricate nuances.
+
+On this blog, I showcase analyses that I craft in my leisure time. Occasionally, these delve into another area of my interest: Avionics. ✈️
 
 To get started, you can check out my [blog](/posts.html).
+
+PS: I launched this blog in 2021 and have now completely revamped it. The older blog posts will be gradually migrated to this updated platform.
 
 You can find me on [LinkedIn](https://www.linkedin.com/in/christian-jaehnert/). Feel free to reach out to me!
 :::
 :::
+

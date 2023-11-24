@@ -52,7 +52,7 @@ So, which side of the plane should I sit on to increase my chances of this great
 
 ![*Source: Swapnil Bapat on Unsplash.com*](singapore_skyline.jpg){fig-align="center"}
 
-**Thankfully, data is here to help! I invite you to join me on this analytical journey.**
+**Thankfully, data is here to help! I invite you to join me on this analytical journey.** ✈️
 
 ## Data
 
@@ -241,7 +241,7 @@ all_data %>%
 
 It's amazing to see how the plane maintains a consistent altitude over an extended period of time. Yes, I'm aware there are minor deviations in altitude, or even significant ones during turbulence. The plot here is somewhat smoothed out due to the resolution of the measurement and also the range of the X- and Y-axis, but I'm still impressed.
 
-:::{.callout-note}
+::: callout-note
 What can also be observed is that sometimes the altitude profile has gaps. This is due to the absence of data points in some instances. The reason for this is that Flightradar24 cannot track signals in certain areas of the world (e.g. ocean areas).
 :::
 
@@ -310,7 +310,7 @@ all_data %>%
 
 The green dot represents Singapore Airport's official location. You can see that, at this altitude, the plane is perfectly aligned with the runway. This leads to the next idea that one could analyze which runway is most frequently used by this flight for landing, but that would be going too far.
 
-:::{.callout-note}
+::: callout-note
 There is multiple runways at Singapore, thats why the line is shifted from day to day.
 :::
 
@@ -482,6 +482,14 @@ all_data <- all_data %>%
 
 ```
 
+:::{.callout-tip}
+In order to compute the bearing I used the geosphere library.
+
+Hijmans R (2022). _geosphere: Spherical Trigonometry_. 
+R package version 1.5-18, <https://CRAN.R-project.org/package=geosphere>.
+
+:::
+
 To see if the indicator works, lets check with the randomly chosen flights.
 
 ```{r}
@@ -566,8 +574,13 @@ all_data %>%
   ggplot(aes(x = holding_pattern, y = flugdauer)) +
   geom_boxplot() +
   labs(x = "Holding Pattern" , y = "Flight duration in minutes")
+```
 
-all_data %>%
+
+```{r}
+#| echo: false
+
+duration <- all_data %>%
   group_by(label) %>%
   mutate(remain_time = max(flugdauer) - flugdauer) %>% 
   filter(remain_time <= 30) %>% 
@@ -581,10 +594,37 @@ all_data %>%
   group_by(holding_pattern) %>% 
   summarise(mean_flight_duration_in_min = mean(flugdauer))
 
-  
+hold_duration <- duration %>% 
+  filter(holding_pattern == "Hold") %>% 
+  pull(mean_flight_duration_in_min)
+
+non_hold_duration <- duration %>% 
+  filter(holding_pattern == "Non-Hold") %>% 
+  pull(mean_flight_duration_in_min)
+
+hold_duration <- round(hold_duration,1)
+non_hold_duration <- round(non_hold_duration,1)
+
+
+duration <- all_data %>%
+  group_by(label) %>%
+  mutate(remain_time = max(flugdauer) - flugdauer) %>% 
+  filter(remain_time <= 30) %>% 
+  left_join(holding_pattern) %>% 
+  mutate(holding_pattern = if_else(max_consecutive_count_last_30_min > 30, 
+                                   "Hold", 
+                                   "Non-Hold")) %>% 
+  group_by(label) %>% 
+  arrange(utc, .by_group = TRUE) %>% 
+  slice(n())
+
+test_result <- t.test(flugdauer ~ holding_pattern, data = duration)
+
+
 ```
 
-Looks like that, when flying a holding pattern, the flight takes on average slightly longer (but the majority still below the scheduled duration).
+Looks like that, when flying a holding pattern, the flight takes on average slightly longer (but the majority still below the scheduled duration). On average a flight with a holding pattern takes `r hold_duration` minutes; a flight without a holding pattern only `r non_hold_duration` minutes. A t-test reveals with a p-value of `r round(test_result$p.value,3)` that this difference of ~6 minutes is not significant.
+
 
 ## Conclusion
 

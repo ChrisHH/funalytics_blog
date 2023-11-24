@@ -9,7 +9,6 @@ website:
 
     right:
       - posts.qmd
-      - about.qmd
       - icon: linkedin        
         href: https://www.linkedin.com/in/christian-jaehnert/
   
