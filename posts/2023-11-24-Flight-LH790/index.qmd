@@ -58,8 +58,7 @@ So, which side of the plane should I sit on to increase my chances of this great
 
 My flight to Singapore is with Lufthansa, departing from Munich. I'll be on flight LH790, a service offered six times per week using the very fuel-efficient A350.
 
-Aviation is a passion of mine, so I have a gold membership at [www.flightradar24.com](http://www.flightradar24.com/).\
-I downloaded data for the last 80 days' flights of LH790. Let's first look at the variables and the date range.
+Aviation is a passion of mine, so I have a gold membership at [www.flightradar24.com](http://www.flightradar24.com/). 🤓 This enables the download of the flight path for each flight over the past 365 days. I downloaded the data for the last 80 days' flights of LH790. Let's first look at the variables and the date range.
 
 ::: {.panel-tabset .nav-pills}
 ## Variables
@@ -106,6 +105,10 @@ The data is already quite impressive. From just 80 flights, I've gathered 115,50
 The timestamp and UTC provide the time information. Latitude (Lat) and Longitude (Lon) show the position of the plane at a certain timestamp/UTC. There's also data on speed (in knots), altitude (in feet), and direction (heading) for that moment.
 
 I've already derived some additional variables that might be useful or interesting, such as the weekday, the weekday of departure from Munich (since the date line is crossed during the flight), and a unique label for each flight.
+
+The following analysis is based on the LH790 flights from August 11th to November 22nd 2023. Nevertheless its onlay 80 days since the connection is not available every day.
+
+Now its time to jump into the data!
 
 ## Speed & Altitude
 
@@ -185,9 +188,11 @@ What's particularly striking is the precision with which the plane maintains alt
 
 ## Altitude and Duration
 
-I need to examine this aspect of the stable altitude more closely.
+I need to take a closer look at this aspect of maintaining stable altitude.
 
-That's why I'm now plotting the altitude of the plane over the flight time (in minutes)!
+Therefore, I am plotting the plane's altitude against flight time (measured in minutes).
+
+I will present a summary encompassing all flights, and for enhanced clarity, I will also showcase randomly selected flights throughout this article (you can switch between the different views using the tabs).
 
 ::: {.panel-tabset .nav-pills}
 ## All Flights
@@ -234,7 +239,11 @@ all_data %>%
 ```
 :::
 
-It's amazing to see how the plane maintains a consistent altitude over an extended period of time. Yes, I'm aware there are minor deviations, or even significant ones during turbulence. The plot here is somewhat smoothed out due to the resolution of the measurement and also the range of the Y-axis, but I'm still impressed.
+It's amazing to see how the plane maintains a consistent altitude over an extended period of time. Yes, I'm aware there are minor deviations in altitude, or even significant ones during turbulence. The plot here is somewhat smoothed out due to the resolution of the measurement and also the range of the X- and Y-axis, but I'm still impressed.
+
+:::{.callout-note}
+What can also be observed is that sometimes the altitude profile has gaps. This is due to the absence of data points in some instances. The reason for this is that Flightradar24 cannot track signals in certain areas of the world (e.g. ocean areas).
+:::
 
 Upon further analysis, I noticed an anomaly on the flight dated November 19th. A quick check on Flightradar24 revealed that on that day, the plane was diverted to Kuala Lumpur after two unsuccessful landing attempts due to bad weather at the airport. I'll exclude this flight from the rest of the analysis.
 
@@ -299,7 +308,11 @@ all_data %>%
 ```
 :::
 
-The green dot represents Singapore Airport's official location. You can see that, at this altitude, the plane is perfectly aligned with the runway (note: there is multiple runways at Singapore, thats why the line is shifted from day to day). This leads to the next idea that one could analyze which runway is most frequently used by this flight for landing, but that would be going too far.
+The green dot represents Singapore Airport's official location. You can see that, at this altitude, the plane is perfectly aligned with the runway. This leads to the next idea that one could analyze which runway is most frequently used by this flight for landing, but that would be going too far.
+
+:::{.callout-note}
+There is multiple runways at Singapore, thats why the line is shifted from day to day.
+:::
 
 The data gives a good overview of the approaches! No we need to understand the local circumstances.
 

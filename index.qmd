@@ -9,12 +9,14 @@ type: website
 :::
 
 ::: g-col-6
-## Hi, I'm Christian!
+## Hi, I'm Christian! 👋
 
-I am living and working in Hamburg. I am passionate about Data Analytics and R. I am holding a Masters Degree in Big Data & Business Analytics.
+I am living and working in Hamburg, Germany. I am passionate about Data Analytics, Machine Learning and Artificial Intelligence and do lots of this stuff in R.
 
-To get started, you can check out my [Blog](/posts.html).
+I am holding a Masters Degree in Big Data & Business Analytics since May 2021.
 
-You can find me on [LinkedIN](https://www.linkedin.com/in/christian-jaehnert/). Feel free to reach out to me!
+To get started, you can check out my [blog](/posts.html).
+
+You can find me on [LinkedIn](https://www.linkedin.com/in/christian-jaehnert/). Feel free to reach out to me!
 :::
 :::
