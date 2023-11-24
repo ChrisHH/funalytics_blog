@@ -43,7 +43,7 @@ I'm eagerly anticipating my trip to Singapore. As a fan of the city, I want to s
 
 So, which side of the plane should I sit on to increase my chances of this great view?
 
-![*Skyline Singapore*](singapore_skyline.jpg){fig-alt="Photo from Swapnil Bapat on Unsplash.com" fig-align="center"}
+![*Source: Swapnil Bapat on Unsplash.com*](singapore_skyline.jpg){fig-align="center"}
 
 **Thankfully, data is here to help! I invite you to join me on this analytical journey.**
 
@@ -300,7 +300,7 @@ The data gives a good overview of the approaches! No we need to understand the l
 
 Here's an overview of the local situation - regarding the airport's location relative to the city. If the approach is from the southwest (indicated by the purple arrow), then the left side of the plane offers a good view of the skyline. Conversely, during a northeast approach (orange arrow), sitting on the right side is advisable to at least see some part of the city - even if it's not the impressive skyline.
 
-![](images/Folie1.png){fig-align="center"}
+![*Source: Google Maps*](images/Folie1.png){fig-align="center"}
 
 ```{r, echo = TRUE, collapse=TRUE}
 #| code-fold: true
