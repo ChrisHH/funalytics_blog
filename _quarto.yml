@@ -14,8 +14,9 @@ website:
         href: https://www.linkedin.com/in/christian-jaehnert/
   
   page-footer:
-    center: 
-      - text: "(c) Christian Jaehnert"
+    background: light
+    left: Copyright 2023, Christian Jaehnert
+    right: This website is built with {{< fa heart title="a heart" >}} and [Quarto](https://quarto.org/)
 
 format:
   html:

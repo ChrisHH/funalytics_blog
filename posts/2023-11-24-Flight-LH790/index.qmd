@@ -536,7 +536,7 @@ all_data %>%
 
 The approach seems to work reasonably well, though undoubtedly there could be more sophisticated solutions.
 
-Let's proceed with this method and aim to answer the question: Are flights with a holding pattern more susceptible to a longer flight duration?
+Let's proceed with this method and aim to answer the question: Are flights with a holding pattern more susceptible to a longer flight duration? Lets look again into a box-plot for the flight duration across both groups.
 
 ```{r}
 all_data %>%
@@ -566,13 +566,13 @@ all_data %>%
   arrange(utc, .by_group = TRUE) %>% 
   slice(n()) %>% 
   group_by(holding_pattern) %>% 
-  summarise(mean_fligth_duration = mean(flugdauer))
+  summarise(mean_flight_duration_in_min = mean(flugdauer))
 
   
 ```
 
-Yes, looks like that, when flying a holding pattern, the flight takes on average slightly longer (but the majority still below the scheduled duration).
+Looks like that, when flying a holding pattern, the flight takes on average slightly longer (but the majority still below the scheduled duration).
 
 ## Conclusion
 
-This was again fun to analyze. Hope you enjoyed it! I will definitely sit on the left side of the plane (thumbs pressed for clear view) and not worry to much about holding patterns since they are pretty usual on this fligth.
+This was again fun to analyze. Hope you enjoyed it! I will definitely sit on the left side of the plane (thumbs pressed for clear view) and not worry to much about holding patterns since they are pretty usual on this flight.
