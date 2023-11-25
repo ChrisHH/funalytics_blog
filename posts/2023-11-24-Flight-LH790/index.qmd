@@ -106,7 +106,7 @@ The timestamp and UTC provide the time information. Latitude (Lat) and Longitude
 
 I've already derived some additional variables that might be useful or interesting, such as the weekday, the weekday of departure from Munich (since the date line is crossed during the flight), and a unique label for each flight.
 
-The following analysis is based on the LH790 flights from August 11th to November 22nd 2023. Nevertheless its onlay 80 days since the connection is not available every day.
+The following analysis is based on the LH790 flights from `r min(all_data$date_start)` to `r max(all_data$date_start)`. That is a difference of `r difftime(max(all_data$date_start), min(all_data$date_start), units = "days")` days. But since the connection is not offered every day, we only look into the last 80 flights in this date range.
 
 Now its time to jump into the data!
 
