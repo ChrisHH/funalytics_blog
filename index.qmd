@@ -11,13 +11,13 @@ type: website
 ::: g-col-6
 ## Hi, I'm Christian! 👋
 
-I'm based in the vibrant city of Hamburg, Germany, where I live and work immersed in the world of Data Analytics, Machine Learning, and Artificial Intelligence. My passion for these fields isn't just a profession; it's a pursuit that drives me to explore, innovate, and excel.
+Based in the beautiful city of Hamburg, Germany, my life revolves around Data Analytics, Machine Learning, and Artificial Intelligence. Far from being just a career, these domains are my passion, continually inspiring me to innovate and excel.
 
-My tool of choice for unraveling the complexities of data is R, a powerful language that enables me to turn raw data into meaningful insights.
+R, with its strong capabilities, is my chosen instrument for deciphering data's complexities, transforming raw numbers into insightful narratives.
 
-In the early 2000s, I embarked on my academic journey, culminating in a diploma in Medical Informatics & Biomedical Engineering. Fast forward to 2021, I further enriched my academic portfolio with a Master's degree in Big Data and Business Analytics. Throughout my professional voyage, I have meticulously honed my skills in market research, mastering the art from its foundational principles to its most intricate nuances.
+My academic path began in the early 2000s, leading to a diploma in Medical Informatics & Biomedical Engineering. Advancing my educational journey, I obtained a Master's in Big Data and Business Analytics in 2021. Professionally, I have rigorously refined my expertise in market research, mastering every aspect from fundamental concepts to advanced techniques.
 
-On this blog, I showcase analyses that I craft in my leisure time. Occasionally, these delve into another area of my interest: Avionics. ✈️
+This blog is a window into the analyses I craft during my free time, sometimes venturing into my other interest, Avionics. ✈️
 
 To get started, you can check out my [blog](/posts.html).
 
@@ -26,4 +26,3 @@ PS: I launched this blog in 2021 and have now completely revamped it. The older 
 You can find me on [LinkedIn](https://www.linkedin.com/in/christian-jaehnert/). Feel free to reach out to me!
 :::
 :::
-

@@ -48,7 +48,7 @@ Hello, it's been a while since my last post! You remember the bears in Canada? �
 However, both this post and the last one share a common theme: they're about my upcoming travels.\
 I'm eagerly anticipating my trip to Singapore. As a fan of the city, I want to start enjoying it right from the moment of my arrival, which means catching a glimpse of the skyline as the plane approach Changi Airport.
 
-So, which side of the plane should I sit on to increase my chances of this great view?
+Given the airport is located to the east of the city, a south-west approach typically offers the most scenic vistas. The question is: What is the likelihood that I will see this view, sitting on the left side of the plane?
 
 ![*Source: Swapnil Bapat on Unsplash.com*](singapore_skyline.jpg){fig-align="center"}
 
@@ -265,7 +265,15 @@ selection <- all_data %>%
 
 ## Approaching Singapore
 
-Now, let's address my initial question of the right side of the plane. From the flight path I examined the final descent phase, specifically when the plane was below 1,000 feet in altitude, because at that stage I would expect that the plane is already fully aligned with the runway! Lets first see if this expecation is correct!
+Let's now turn our attention to the initial question regarding the likelihood of having the best view of Singapore's skyline, and take a closer look at the local conditions in more detail.
+
+![Source: Google Maps](images/Folie1.png){fig-align="center"}
+
+As indicated on the map and mentioned earlier, if the approach is from the southwest (shown by the purple arrow), then the left side of the plane provides a good view of the skyline. On the other hand, for a northeast approach (marked by the orange arrow), it's recommended to sit on the right side to catch a glimpse of the city, even if it's not the full, impressive skyline.
+
+What needs to be done now is to determine the approach direction for each flight in order to calculate the likelihood of getting the best view. How do I do that?
+
+From the flight path I examined the final descent phase, specifically when the plane was below 2,000 feet (\~ 600 m) in altitude, because at that stage I would expect (and hope 😃) that the plane is already fully aligned with the runway! Lets first see if this expecation holds true!
 
 ::: {.panel-tabset .nav-pills}
 ## All Flights
@@ -273,11 +281,12 @@ Now, let's address my initial question of the right side of the plane. From the 
 ```{r}
 all_data %>%
   group_by(label) %>% 
-  filter(phase == "Descend" & altitude < 1000) %>% 
+  filter(phase == "Descend" & altitude < 2000) %>% 
   ggplot(aes(x = lon, y = lat)) +
   geom_point(shape = "circle", colour = "#0032a0", size = 0.5) +
   facet_wrap(vars(label), scales = "free") +
   geom_point(aes(x = 103.989441, y = 1.359167), color = "#45a13f", size = 2) +
+  geom_point(aes(x = 103.860929 , y = 1.282848,), color = "#fff377", size = 2) +
   theme_plex() +
   theme(strip.text.x = element_text(size = 4),
         strip.text.y = element_text(size = 4),
@@ -294,11 +303,12 @@ all_data %>%
 all_data %>%
   filter(label %in% selection) %>% 
   group_by(label) %>% 
-  filter(phase == "Descend" & altitude < 1000) %>% 
+  filter(phase == "Descend" & altitude < 2000) %>% 
   ggplot(aes(x = lon, y = lat)) +
   geom_point(shape = "circle", colour = "#0032a0", size = 0.5) +
   facet_wrap(vars(label), scales = "free") +
   geom_point(aes(x = 103.989441, y = 1.359167), color = "#45a13f", size = 2) +
+  geom_point(aes(x = 103.860929 , y = 1.282848,), color = "#fff377", size = 2) +
   theme_plex() +
   theme(strip.text.x = element_text(size = 8),
         strip.text.y = element_text(size = 8),
@@ -308,19 +318,13 @@ all_data %>%
 ```
 :::
 
-The green dot represents Singapore Airport's official location. You can see that, at this altitude, the plane is perfectly aligned with the runway. This leads to the next idea that one could analyze which runway is most frequently used by this flight for landing, but that would be going too far.
+The yellow point marks the location of the renowned Marina Bay Sands, while the green dot signifies the official location of Singapore Airport. It is very evident that at an altitude of 2,000 feet, the aircraft is already perfectly aligned with the runway (blue points form a perfect line). Additionally, it is observable that there is a singular direction offering a prime view of the skyline: the approach from the southwest (like we already know).
 
 ::: callout-note
 There is multiple runways at Singapore, thats why the line is shifted from day to day.
 :::
 
-The data gives a good overview of the approaches! No we need to understand the local circumstances.
-
-## Optimal Seating Side for the Skyline View
-
-Here's an overview of the local situation - regarding the airport's location relative to the city. If the approach is from the southwest (indicated by the purple arrow), then the left side of the plane offers a good view of the skyline. Conversely, during a northeast approach (orange arrow), sitting on the right side is advisable to at least see some part of the city - even if it's not the impressive skyline.
-
-![*Source: Google Maps*](images/Folie1.png){fig-align="center"}
+Now, all I need to do is classify each approach to easily tally them up. And here's the concept: if the average latitude of the approach is less than the latitude of Singapore airport, then the approach is likely from the northeast. Conversely, if it's higher, the approach is probably from the southeast. This must be adjusted to the specific airport (could be different if there are crossing runways). Let's calculate and see what the results show.
 
 ```{r, echo = TRUE, collapse=TRUE}
 #| code-fold: true
@@ -328,16 +332,14 @@ Here's an overview of the local situation - regarding the airport's location rel
 
 flights_direction <- all_data %>%
   group_by(label) %>% 
-  filter(phase == "Descend" & altitude < 1000) %>% 
+  filter(phase == "Descend" & altitude < 2000) %>% 
   group_by(label) %>%
   summarize(approach_direction = if_else(mean(lat) > 1.359167, 
                                          'north-east', 
                                          'south-west'))
 ```
 
-Now, to determine the best side for a view, all I need to do is classify each approach to easily tally them up.
-
-Here's the concept: if the average latitude of the approach is less than the latitude of Singapore airport, then the approach is likely from the northeast. Conversely, if it's higher, the approach is probably from the southeast. Let's calculate and see what the results show.
+Now, let's proceed to verify if the "classification" is accurate by conducting a graphical inspection (this time without the Marina Bay Sands, but only the airport as a green point).
 
 ::: {.panel-tabset .nav-pills}
 ## All Flights
@@ -346,7 +348,7 @@ Here's the concept: if the average latitude of the approach is less than the lat
 all_data %>%
   left_join(flights_direction) %>%
   group_by(label) %>% 
-  filter(phase == "Descend" & altitude < 1000) %>% 
+  filter(phase == "Descend" & altitude < 2000) %>% 
   ggplot(.) +
   aes(x = lon, y = lat, colour = approach_direction) +
   geom_point(shape = "circle", size = 0.5) +
@@ -366,7 +368,7 @@ all_data %>%
   filter(label %in% selection) %>% 
   left_join(flights_direction) %>%
   group_by(label) %>% 
-  filter(phase == "Descend" & altitude < 1000) %>% 
+  filter(phase == "Descend" & altitude < 2000) %>% 
   ggplot(.) +
   aes(x = lon, y = lat, colour = approach_direction) +
   geom_point(shape = "circle", size = 0.5) +
@@ -397,31 +399,15 @@ all_data %>%
 ```
 :::
 
-It turns out, disappointingly, that only \~ 25% of the 80 flights approached from the southwest, the direction offering a view of the skyline. However, to maximize my chances, I should choose a seat on the left-hand side of the plane. That's what I'll aim for!
+To clarify the legend: the approach always refers to the *incoming* direction. So, "south-west" means that the approach is being made from the southwest direction (as you can see in the plot). As mentioned earlier, the approach from the southwest offers the best view of the skyline, but **it turns out, disappointingly, that only \~ 25% of the 80 flights are approached from this direction.\
+\
+What a pitty** 😥.
 
-## Flight Duration
-
-To conclude this blog post as an add-on, I'll examine the duration of the flight. It's scheduled to last 12 hours and 5 minutes, or 720 minutes. Lets see the distribution across all flights in a box plot.
-
-```{r}
-all_data %>% 
-  group_by(label) %>% 
-  summarise(flighttime = max(flugdauer)) %>% 
-  ggplot(aes(x = "LH790", y=flighttime)) +
-  geom_boxplot() +
-  labs(y = "Flighttime in minutes", x = "")
-```
-
-There's one outlier at 760 minutes, surpassing the scheduled duration. The boxplot shows that 50% of the flights over the past 80 days took less than 700 minutes, while the other half took more. The majority fell between 690 and 717 minutes, which is either below or close to the scheduled time.
-
-But what accounts for these differences? In analyzing this plot, it's important to consider that while it provides a snapshot of flight durations, further context would be needed to understand the specific causes of a longer or shorter flight duration, such as weather conditions, air flow, air traffic control restrictions, or other operational factors.
-
-Lets at least check the aspect of air traffic control restrictions by analyzing holding patterns.
+But wait, there might be another opportunity! Considering that Singapore Changi Airport is very busy, this might lead planes into holding patterns. Perhaps while circling in these holding patterns, there's a chance to catch a glimpse of the skyline. Let's investigate this possibility!
 
 ## Holdings
 
-To analyze holding patterns, I will examine the final 30 minutes of each flight.\
-Let's plot their routes for further insights.
+To analyze holding patterns, I will examine the final 30 minutes of each flight. Let's plot their routes for further insights.
 
 ::: {.panel-tabset .nav-pills}
 ## All Flights
@@ -435,6 +421,7 @@ all_data %>%
   geom_point(shape = "circle", colour = "#0032a0", size = 0.5) +
   facet_wrap(vars(label), scales = "free") +
   geom_point(aes(x = 103.989441, y = 1.359167), color = "#45a13f", size = 2) +
+  geom_point(aes(x = 103.860929 , y = 1.282848,), color = "#fff377", size = 2) +
   theme(strip.text.x = element_text(size = 8),
         strip.text.y = element_text(size = 8),
         axis.text.x = element_text(size = 5),
@@ -454,6 +441,7 @@ all_data %>%
   geom_point(shape = "circle", colour = "#0032a0", size = 0.5) +
   facet_wrap(vars(label), scales = "free") +
   geom_point(aes(x = 103.989441, y = 1.359167), color = "#45a13f", size = 2) +
+  geom_point(aes(x = 103.860929 , y = 1.282848,), color = "#fff377", size = 2) +
   theme(strip.text.x = element_text(size = 8),
         strip.text.y = element_text(size = 8),
         axis.text.x = element_text(size = 5),
@@ -463,11 +451,13 @@ all_data %>%
 ```
 :::
 
-Some flights exhibit distinct holding patterns prior to landing, identifiable by their bow-shaped paths.
+Some flights exhibit distinct holding patterns prior to landing, identifiable by their bow-shaped paths. Interestingly, it appears that sometimes, even when the approach is from the northeast, there might be a chance to see the skyline. However, it's important to consider the differences in altitude when passing by, as well as the actual distance. Although it may seem relatively close on the small diagram, in reality, the distance could be significantly larger. But let's set that aside for now.
 
-## Derivation of Holdings
+The next step involves classifying each flight to determine whether it follows a holding pattern. For those flights that do have a holding pattern, we need to check if this occurs near the skyline. This will help us assess the likelihood of passengers getting a view of the skyline during these patterns.
 
-To identify holding patterns, the focus is narrowed to the last 30 minutes of each flight, during which significant changes in the bearing could indicate circling or looping maneuvers. The analysis starts by organizing the flight data chronologically for each flight. The bearing, or direction of travel, from one point to the next is calculated for the entire flight path. If there is a high number of consecutive changes in the bearing, this might point to a holding pattern.
+## **Derivation of Holdings**
+
+To identify holding patterns, the focus is narrowed to the last 30 minutes of each flight, during which significant changes in the *bearing* could indicate circling or looping maneuvers. The analysis starts by organizing the flight data chronologically for each flight. The bearing, or direction of travel, from one point to the next is calculated for the entire flight path. If there is a high number of *consecutive changes* (to the prior way point) in the bearing, this might indicate a holding pattern.
 
 ```{r}
 all_data <- all_data %>%
@@ -482,12 +472,10 @@ all_data <- all_data %>%
 
 ```
 
-:::{.callout-tip}
+::: callout-tip
 In order to compute the bearing I used the geosphere library.
 
-Hijmans R (2022). _geosphere: Spherical Trigonometry_. 
-R package version 1.5-18, <https://CRAN.R-project.org/package=geosphere>.
-
+Hijmans R (2022). *geosphere: Spherical Trigonometry*. R package version 1.5-18, <https://CRAN.R-project.org/package=geosphere>.
 :::
 
 To see if the indicator works, lets check with the randomly chosen flights.
@@ -505,6 +493,7 @@ all_data %>%
   geom_point(shape = "circle", size = 0.5) +
   facet_wrap(vars(label), scales = "free") +
   geom_point(aes(x = 103.989441, y = 1.359167), color = "#45a13f", size = 2) +
+  geom_point(aes(x = 103.860929 , y = 1.282848,), color = "#fff377", size = 2) +
   theme(strip.text.x = element_text(size = 8),
         strip.text.y = element_text(size = 8),
         axis.text.x = element_text(size = 5),
@@ -514,7 +503,7 @@ all_data %>%
 
 ```
 
-That looks quite promising. I've experimented a bit and established a rule: if there are more than 30 consecutive points showing a change in direction, I classify the flight as one executing a holding pattern.
+That looks quite promising. I've experimented a bit and established a rule: if there are more than 30 *consecutive* points showing a change in direction, I classify the flight as one having a holding pattern.
 
 ```{r}
 
@@ -546,6 +535,7 @@ all_data %>%
   geom_point(shape = "circle", size = 0.5) +
   facet_wrap(vars(label), scales = "free") +
   geom_point(aes(x = 103.989441, y = 1.359167), color = "#45a13f", size = 2) +
+  geom_point(aes(x = 103.860929 , y = 1.282848,), color = "#fff377", size = 2) +
   theme_plex() +
   theme(strip.text.x = element_text(size = 8),
         strip.text.y = element_text(size = 8),
@@ -555,77 +545,90 @@ all_data %>%
 
 ```
 
-The approach seems to work reasonably well, though undoubtedly there could be more sophisticated solutions.
-
-Let's proceed with this method and aim to answer the question: Are flights with a holding pattern more susceptible to a longer flight duration? Lets look again into a box-plot for the flight duration across both groups.
+The approach seems to work reasonably well, though undoubtedly there could be more sophisticated solutions. I focus on the flights with a holding patterns and the approach from the nort-east from here on now; again on a plot.
 
 ```{r}
 all_data %>%
   group_by(label) %>%
   mutate(remain_time = max(flugdauer) - flugdauer) %>% 
   filter(remain_time <= 30) %>% 
+  left_join(flights_direction) %>% 
+  filter(approach_direction == "north-east") %>% 
   left_join(holding_pattern) %>% 
-  mutate(holding_pattern = if_else(max_consecutive_count_last_30_min > 30, 
-                                   "Hold", 
-                                   "Non-Hold")) %>% 
-  group_by(label) %>% 
-  arrange(utc, .by_group = TRUE) %>% 
-  slice(n()) %>% 
-  ggplot(aes(x = holding_pattern, y = flugdauer)) +
-  geom_boxplot() +
-  labs(x = "Holding Pattern" , y = "Flight duration in minutes")
+  mutate(holding_pattern = if_else(max_consecutive_count_last_30_min > 30, "Hold", "Non-Hold")) %>% 
+  filter(holding_pattern == "Hold") %>% 
+  ggplot(aes(x = lon, y = lat)) +
+  geom_point(shape = "circle", size = 0.5, color = "#0032a0") +
+  facet_wrap(vars(label), scales = "free") +
+  geom_point(aes(x = 103.989441, y = 1.359167), color = "#45a13f", size = 2) +
+  geom_point(aes(x = 103.860929 , y = 1.282848,), color = "#fff377", size = 2) +
+  theme_plex() +
+  theme(strip.text.x = element_text(size = 6),
+        strip.text.y = element_text(size = 6),
+        axis.text.x = element_text(size = 5),
+        axis.text.y = element_text(size = 5)) +
+  labs(x= "Longitude", y = "Latitude")
+
 ```
 
+What I have to do now, is to calculate the mean altitude from the center of each holding pattern and the distance to the skyline (yellow point).
+
+Now, I will plot only the center of each detected holding pattern for each remaining flight, considering only those patterns that are a maximum of 20,000 meters away. Let's see if there are any patterns close to the skyline (indicated by the yellow point) at an altitude suitable for observing the skyline (one must consider the cloud cover).
 
 ```{r}
-#| echo: false
-
-duration <- all_data %>%
+all_data %>%
+  left_join(flights_direction) %>% 
+  filter(approach_direction == "north-east") %>% 
   group_by(label) %>%
-  mutate(remain_time = max(flugdauer) - flugdauer) %>% 
-  filter(remain_time <= 30) %>% 
   left_join(holding_pattern) %>% 
-  mutate(holding_pattern = if_else(max_consecutive_count_last_30_min > 30, 
-                                   "Hold", 
-                                   "Non-Hold")) %>% 
+  filter(max_consecutive_count_last_30_min > 30) %>% 
+  group_by(label) %>%
+  mutate(
+    remain_time = max(flugdauer) - flugdauer,
+    change_in_bearing = c(NA, diff(bearing))) %>%
+  filter(remain_time <= 30) %>% 
+  mutate(in_holding_pattern = abs(change_in_bearing) > 1) %>% 
   group_by(label) %>% 
   arrange(utc, .by_group = TRUE) %>% 
-  slice(n()) %>% 
-  group_by(holding_pattern) %>% 
-  summarise(mean_flight_duration_in_min = mean(flugdauer))
+  mutate(row_id = row_number()) %>%
+  group_by(label, grp = with(rle(in_holding_pattern), rep(seq_along(lengths), lengths))) %>%
+  mutate(consecutive_count = n(),
+         holding_id = paste(label, utc[1])) %>% 
+  group_by(label, holding_id) %>% 
+  summarise(mean_lat = mean(lat),
+            mean_lon = mean(lon),
+            mean_alt = mean(altitude)) %>%
+  mutate(reference_lat = 1.282848, 
+         reference_lon = 103.860929) %>% 
+  mutate(diff_lat = mean_lat - reference_lat, 
+    diff_lon = mean_lon - reference_lon,
+    diff_lat_meters = diff_lat * 111000,
+    diff_lon_meters = diff_lon * (111000 * cos(mean_lat * pi / 180))) %>%
+  rowwise() %>%
+  mutate(distance_meters = distm(c(reference_lon, reference_lat), c(mean_lon, mean_lat))) %>%
+  ungroup() %>% 
+  filter(distance_meters <= 20000) %>% 
+  ggplot(aes(x = mean_lon, y = mean_lat, color = mean_alt)) +
+  geom_point(shape = "circle") +
+  geom_point(aes(x = 103.989441, y = 1.359167), color = "#45a13f", size = 2) +
+  geom_point(aes(x = 103.860929 , y = 1.282848,), color = "#fff377", size = 2) +
+  facet_wrap(vars(label)) +
+  theme(strip.text.x = element_text(size = 6),
+        strip.text.y = element_text(size = 6),
+        axis.text.x = element_text(size = 5),
+        axis.text.y = element_text(size = 5)) +
+  labs(x= "Longitude", y = "Latitude", color = "Mean Altitude (ft)")
 
-hold_duration <- duration %>% 
-  filter(holding_pattern == "Hold") %>% 
-  pull(mean_flight_duration_in_min)
-
-non_hold_duration <- duration %>% 
-  filter(holding_pattern == "Non-Hold") %>% 
-  pull(mean_flight_duration_in_min)
-
-hold_duration <- round(hold_duration,1)
-non_hold_duration <- round(non_hold_duration,1)
-
-
-duration <- all_data %>%
-  group_by(label) %>%
-  mutate(remain_time = max(flugdauer) - flugdauer) %>% 
-  filter(remain_time <= 30) %>% 
-  left_join(holding_pattern) %>% 
-  mutate(holding_pattern = if_else(max_consecutive_count_last_30_min > 30, 
-                                   "Hold", 
-                                   "Non-Hold")) %>% 
-  group_by(label) %>% 
-  arrange(utc, .by_group = TRUE) %>% 
-  slice(n())
-
-test_result <- t.test(flugdauer ~ holding_pattern, data = duration)
 
 
 ```
 
-Looks like that, when flying a holding pattern, the flight takes on average slightly longer (but the majority still below the scheduled duration). On average a flight with a holding pattern takes `r hold_duration` minutes; a flight without a holding pattern only `r non_hold_duration` minutes. A t-test reveals with a p-value of `r round(test_result$p.value,3)` that this difference of ~6 minutes is not significant.
+Okay, that's quite clear! The altitude is acceptable. **However, it seems that holding patterns won't be helpful in this case.** As observed, there is no helpful center of a holding pattern close to the yellow point, which would indicate it being within a radius of 20,000 meters. So, unfortunately, holding patterns do not provide an opportunity to view the skyline in this scenario.
 
+::: callout-tip
+Holdings close to the green point (representing the airport) and at an altitude of zero are actually turns made during taxiing. This serves as further evidence that the detection of holding patterns can be improved. It highlights the need to differentiate between actual holding patterns in the air and movements on the ground to enhance the accuracy of the analysis.
+:::
 
 ## Conclusion
 
-This was again fun to analyze. Hope you enjoyed it! I will definitely sit on the left side of the plane (thumbs pressed for clear view) and not worry to much about holding patterns since they are pretty usual on this flight.
+I thoroughly enjoyed analyzing this once again. I hope you found it enjoyable too! I'm definitely planning to sit on the left side of the plane, fingers crossed for that 25% chance. I'm aware there will be holdings, but I don't expect them to be much help to see Singapores skyline. Speaking of holdings, I'll ponder over ways to improve, especially if part of the route involves a holding pattern. This has certainly piqued my interest in delving into the realm of geodistance calculations.
