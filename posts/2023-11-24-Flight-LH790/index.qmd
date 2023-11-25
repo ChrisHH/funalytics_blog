@@ -576,7 +576,6 @@ What I have to do now, is to calculate the mean altitude from the center of each
 Now, I will plot only the center of each detected holding pattern for each remaining flight, considering only those patterns that are a maximum of 20,000 meters away (at any mean altitude). Let's see if there are any patterns close to the skyline (indicated by the yellow point) at an altitude suitable for observing the skyline (one must consider the cloud cover). On the scatterplot I look into holdings at an altitude of lower than 6,500 ft (assuming this has chance to be below the cloud cover) to check how far/distant they are from the skyline.
 
 ::: panel-tabset
-
 ## Flightpath
 
 ```{r}
