@@ -46,7 +46,7 @@ update_geom_defaults("line", list(color = "#0032a0", alpha = 0.8))
 Hello, it's been a while since my last post! You remember the bears in Canada? 🐻
 
 However, both this post and the last one share a common theme: they're about my upcoming travels.\
-I'm eagerly anticipating my trip to Singapore. As a fan of the city, I want to start enjoying it right from the moment of my arrival, which means catching a glimpse of the skyline as the plane approach Changi Airport.
+I'm eagerly anticipating my trip to Singapore. As a fan of the city, I want to start enjoying it right from the moment of my arrival, which means catching a glimpse of the skyline as the plane approaches Changi Airport.
 
 Given the airport is located to the east of the city, a south-west approach typically offers the most scenic vistas. The question is: What is the likelihood that I will see this view, sitting on the left side of the plane?
 
@@ -112,7 +112,7 @@ Now its time to jump into the data!
 
 ## Speed & Altitude
 
-Lets scatter both variables, speed and altitude, from the 80 flights.
+Let's scatter both variables, speed and altitude, from the 80 flights.
 
 ```{r}
 all_data %>% 
@@ -273,7 +273,7 @@ As indicated on the map and mentioned earlier, if the approach is from the south
 
 What needs to be done now is to determine the approach direction for each flight in order to calculate the likelihood of getting the best view. How do I do that?
 
-From the flight path I examined the final descent phase, specifically when the plane was below 2,000 feet (\~ 600 m) in altitude, because at that stage I would expect (and hope 😃) that the plane is already fully aligned with the runway! Lets first see if this expecation holds true!
+From the flight path I examined the final descent phase, specifically when the plane was below 2,000 feet (\~ 600 m) in altitude, because at that stage I would expect (and hope 😃) that the plane is already fully aligned with the runway! Let's first see if this expectation holds true!
 
 ::: {.panel-tabset .nav-pills}
 ## All Flights
@@ -478,7 +478,7 @@ In order to compute the bearing I used the geosphere library.
 Hijmans R (2022). *geosphere: Spherical Trigonometry*. R package version 1.5-18, <https://CRAN.R-project.org/package=geosphere>.
 :::
 
-To see if the indicator works, lets check with the randomly chosen flights.
+To see if the indicator works, let's check with the randomly chosen flights.
 
 ```{r}
 all_data %>%
@@ -545,7 +545,7 @@ all_data %>%
 
 ```
 
-The approach seems to work reasonably well, though undoubtedly there could be more sophisticated solutions. I focus on the flights with a holding patterns and the approach from the nort-east from here on now; again on a plot.
+The approach seems to work reasonably well, though undoubtedly there could be more sophisticated solutions. I focus on the flights with a holding patterns and the approach from the north-east from here on now; again on a plot.
 
 ```{r}
 all_data %>%
@@ -631,4 +631,4 @@ Holdings close to the green point (representing the airport) and at an altitude 
 
 ## Conclusion
 
-I thoroughly enjoyed analyzing this once again. I hope you found it enjoyable too! I'm definitely planning to sit on the left side of the plane, fingers crossed for that 25% chance. I'm aware there will be holdings, but I don't expect them to be much help to see Singapores skyline. Speaking of holdings, I'll ponder over ways to improve, especially if part of the route involves a holding pattern. This has certainly piqued my interest in delving into the realm of geodistance calculations.
+I thoroughly enjoyed analyzing this once again. I hope you found it enjoyable too! I'm definitely planning to sit on the left side of the plane, fingers crossed for that 25% chance. I'm aware there will be holdings, but I don't expect them to be much help to see Singapore's skyline. Speaking of holdings, I'll ponder over ways to improve, especially if part of the route involves a holding pattern. This has certainly piqued my interest in delving into the realm of geodistance calculations.
