@@ -3,6 +3,7 @@ project:
 
 website:
   title: "FUNAlytics Blog"
+  favicon: "📊"
   site-url: https://funalytics.de 
   description: "This is Christian Jaehnert's personal Blog."
   navbar:
