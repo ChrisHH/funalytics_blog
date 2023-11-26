@@ -209,7 +209,7 @@ all_data <- all_data %>%
 
 Whats going on in the code? After cleaning up of the anomalies in the data, I focused on calculating the relative length of the flight since takeoff. To clarify, I'm considering 'takeoff' as the last moment when the altitude is zero and eliminating all prior data points, effectively excluding the taxiing phase (same applies for the landing).
 
-The next step is to calculate the gradient, which involves correlating the change in altitude with the change in the relative length of the flight. The sign of this gradient indicates whether the plane is ascending or descending between two points. After this, I smooth out the gradient for a clearer analysis. The sign of this gradient indicates whether the flight is ascending or descending.
+The next step is to calculate the gradient, which involves correlating the change in altitude with the change in the relative length of the flight. The sign of this gradient indicates whether the plane is ascending or descending between two points. After this, I smooth out the gradient for a clearer analysis.
 
 Let's now revisit the plot, this time analyzing it by the flight phase.
 
@@ -667,4 +667,6 @@ Holdings close to the green point (representing the airport) and at an altitude 
 
 ## Conclusion
 
-I thoroughly enjoyed analyzing this once again. I hope you found it enjoyable too! I'm definitely planning to sit on the left side of the plane, fingers crossed for that 25% chance. I'm aware there will be holdings, but I don't expect them to be much help to see Singapore's skyline. Speaking of holdings, I'll ponder over ways to improve, especially if part of the route involves a holding pattern. This has certainly piqued my interest in delving into the realm of geodistance calculations.
+I thoroughly enjoyed analyzing this once again. I hope you found it enjoyable too! I learned: I don't need to worry about delays. I'm definitely planning to sit on the left side of the plane, fingers crossed for that 25% chance. I'm aware there will be holdings, but I don't expect them to be much help to see Singapore's skyline.
+
+Looking ahead for improvement and learning, I plan to enhance the detection of holding patterns, possibly using a model-based approach. Additionally, I intend to display the plots on a geographical map for better visualization.
