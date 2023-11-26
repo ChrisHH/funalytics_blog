@@ -11,13 +11,13 @@ type: website
 ::: g-col-6
 ## Hi, I'm Christian! 👋
 
-Based in the beautiful city of Hamburg, Germany, my life revolves around Data Analytics, Machine Learning, and Artificial Intelligence. Far from being just a career, these domains are my passion, continually inspiring me to innovate and excel.
+Based in the beautiful city of Hamburg, Germany, I find myself deeply engaged in the fields of Data Analytics, Machine Learning, and Artificial Intelligence. These areas, more than just a professional path, are interests that constantly motivate me to learn and grow.
 
-R, with its strong capabilities, is my chosen instrument for deciphering data's complexities, transforming raw numbers into insightful narratives.
+I often use R for its effectiveness in making sense of complex data, helping turn numbers into meaningful stories.
 
-My academic path began in the early 2000s, leading to a diploma in Medical Informatics & Biomedical Engineering. Advancing my educational journey, I obtained a Master's in Big Data and Business Analytics in 2021. Professionally, I have rigorously refined my expertise in market research, mastering every aspect from fundamental concepts to advanced techniques.
+My educational background includes a diploma in Medical Informatics & Biomedical Engineering, obtained in the early 2000s. Furthering my studies, I completed a Master\'s in Big Data and Business Analytics in 2021. In my career, particularly in market research, I\'ve gained a broad understanding, from basic principles to more advanced methods.
 
-This blog is a window into the analyses I craft during my free time, sometimes venturing into my other interest, Avionics. ✈️
+This blog shares some of the analyses I do in my spare time, and occasionally, I explore topics in Avionics, another area of interest. ✈️️
 
 To get started, you can check out my [blog](/posts.html).
 
