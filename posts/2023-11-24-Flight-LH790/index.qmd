@@ -110,6 +110,45 @@ The following analysis is based on the LH790 flights from `r min(all_data$date_s
 
 Now its time to jump into the data!
 
+## Punctuality of departure
+
+Let's begin with a quick review of the departure punctuality. The flight is scheduled to depart at 10 PM.\
+I calculated the difference between this time and the actual take-off time, which is determined by the first waypoint (time) exceeding 1000 feet.
+
+```{r}
+all_data %>%
+  arrange(utc) %>%
+  group_by(date_start) %>%
+  mutate(threshold_crossed = altitude > 1000, 
+         first_time_crossed = cumsum(threshold_crossed) == 1) %>%
+  filter(first_time_crossed) %>%
+  slice(1) %>%
+  ungroup() %>%
+  mutate(utc_datetimes = ymd_hms(utc),
+         muc_take_off = with_tz(utc_datetimes, "Europe/Berlin")) %>% 
+  mutate(difference = difftime(muc_take_off, paste(date_start, "22:00:00"),  tz = "Europe/Berlin", "mins")) %>%
+  ggplot(aes(difference)) +
+  geom_histogram(binwidth = 10) +
+  labs(x = "Difference Take-Off-Time & STD in minutes*", caption = "´STD Scheduled Time of Departure", y = "Frequency")
+
+mean_delay <- all_data %>%
+  arrange(utc) %>%
+  group_by(date_start) %>%
+  mutate(threshold_crossed = altitude > 1000, 
+         first_time_crossed = cumsum(threshold_crossed) == 1) %>%
+  filter(first_time_crossed) %>%
+  slice(1) %>%
+  ungroup() %>%
+  mutate(utc_datetimes = ymd_hms(utc),
+         muc_take_off = with_tz(utc_datetimes, "Europe/Berlin")) %>% 
+  mutate(difference = difftime(muc_take_off, paste(date_start, "22:00:00"),  tz = "Europe/Berlin", "mins")) %>% 
+  summarise(mean_delay = mean(as.numeric(difference))) %>% 
+  pull(mean_delay) 
+  
+```
+
+Fortunately, the histogram indicates that only a few flights have delays exceeding one hour. The average delay is approximately `r round(mean_delay, 1)` minutes. This seems quite reasonable for a 12-hour flight, especially considering that the STD refers to the time when the plane is pushed back. Thus, the "delay" observed here actually encompasses the time taken for pushing back and taxiing. In conclusion, there is no need to be concerned about significant delays.
+
 ## Speed & Altitude
 
 Let's scatter both variables, speed and altitude, from the 80 flights.
@@ -575,9 +614,6 @@ What I have to do now, is to calculate the mean altitude from the center of each
 
 Now, I will plot only the center of each detected holding pattern for each remaining flight, considering only those patterns that are a maximum of 20,000 meters away (at any mean altitude). Let's see if there are any patterns close to the skyline (indicated by the yellow point) at an altitude suitable for observing the skyline (one must consider the cloud cover). On the scatterplot I look into holdings at an altitude of lower than 6,500 ft (assuming this has chance to be below the cloud cover) to check how far/distant they are from the skyline.
 
-::: panel-tabset
-## Flightpath
-
 ```{r}
 all_data %>%
   left_join(flights_direction) %>% 
@@ -623,49 +659,7 @@ all_data %>%
   labs(x= "Longitude", y = "Latitude", color = "Mean Altitude (ft)")
 ```
 
-## Scatterplot
-
-```{r}
-all_data %>%
-  left_join(flights_direction) %>% 
-  filter(approach_direction == "north-east") %>% 
-  group_by(label) %>%
-  left_join(holding_pattern) %>% 
-  filter(max_consecutive_count_last_30_min > 30) %>% 
-  group_by(label) %>%
-  mutate(
-    remain_time = max(flugdauer) - flugdauer,
-    change_in_bearing = c(NA, diff(bearing))) %>%
-  filter(remain_time <= 30) %>% 
-  mutate(in_holding_pattern = abs(change_in_bearing) > 1) %>% 
-  group_by(label) %>% 
-  arrange(utc, .by_group = TRUE) %>% 
-  mutate(row_id = row_number()) %>%
-  group_by(label, grp = with(rle(in_holding_pattern), rep(seq_along(lengths), lengths))) %>%
-  mutate(consecutive_count = n(),
-         holding_id = paste(label, utc[1])) %>% 
-  group_by(label, holding_id) %>% 
-  summarise(mean_lat = mean(lat),
-            mean_lon = mean(lon),
-            mean_alt = mean(altitude)) %>%
-  mutate(reference_lat = 1.282848, 
-         reference_lon = 103.860929) %>% 
-  mutate(diff_lat = mean_lat - reference_lat, 
-    diff_lon = mean_lon - reference_lon,
-    diff_lat_meters = diff_lat * 111000,
-    diff_lon_meters = diff_lon * (111000 * cos(mean_lat * pi / 180))) %>%
-  rowwise() %>%
-  mutate(distance_meters = distm(c(reference_lon, reference_lat), c(mean_lon, mean_lat))) %>%
-  ungroup() %>% 
-  filter(mean_alt <= 6500) %>% 
-  ggplot(aes(x = distance_meters, y = mean_alt)) +
-  geom_point() +
-  geom_vline(xintercept = 20000, linetype = "dashed", "gray20") +
-  labs(x = "Distance of Holding to Skyline in m", y = "Mean Altitude in ft")
-```
-:::
-
-Okay, that's quite clear! The altitude is acceptable. **However, it seems that holding patterns won't be helpful in this case.** As observed, there is no helpful center of a holding pattern close to the yellow point, which would indicate it being within a radius of 20,000 meters. So, unfortunately, holding patterns do not provide an opportunity to view the skyline in this scenario. This is confirmed by the scatter plot. Yes, there are holding patterns below the 6,500 ft but the majority at a higher distance.
+Okay, that's quite clear! The altitude is acceptable. **However, it seems that holding patterns won't be helpful in this case.** As observed, there is no helpful center of a holding pattern close to the yellow point, which would indicate it being within a radius of 20,000 meters. So, unfortunately, holding patterns do not provide an opportunity to view the skyline in this scenario.
 
 ::: callout-note
 Holdings close to the green point (representing the airport) and at an altitude of zero are actually turns made during taxiing. This serves as further evidence that the detection of holding patterns can be improved. It highlights the need to differentiate between actual holding patterns in the air and movements on the ground to enhance the accuracy of the analysis.
