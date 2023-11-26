@@ -2,6 +2,12 @@ project:
   type: website
 
 website:
+ 
+  cookie-consent:
+    type: express
+    style: headline
+    palette: light
+    
   title: "FUNAlytics Blog"
   favicon: "📊"
   site-url: https://funalytics.de 
@@ -29,4 +35,3 @@ editor: visual
 execute:
   freeze: auto
   
-cookie-consent: true
