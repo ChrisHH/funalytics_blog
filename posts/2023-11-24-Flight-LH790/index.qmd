@@ -129,7 +129,7 @@ all_data %>%
   mutate(difference = difftime(muc_take_off, paste(date_start, "22:00:00"),  tz = "Europe/Berlin", "mins")) %>%
   ggplot(aes(difference)) +
   geom_histogram(binwidth = 10) +
-  labs(x = "Difference Take-Off-Time & STD in minutes*", caption = "´STD Scheduled Time of Departure", y = "Frequency")
+  labs(x = "Difference Take-Off-Time & STD in minutes*", caption = "*STD Scheduled Time of Departure", y = "Frequency")
 
 mean_delay <- all_data %>%
   arrange(utc) %>%
