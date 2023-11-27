@@ -4,7 +4,6 @@ author: Christian Jaehnert
 date: '2023-11-27'
 format: html
 slug: "Bla"
-draft: TRUE
 categories:
   - R
   - ggplot
