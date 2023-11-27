@@ -1,9 +1,10 @@
 ---
 title: "Flight LH790 (MUC - SIN)"
 author: Christian Jaehnert
-date: '2023-11-26'
+date: '2023-11-27'
 format: html
-slug: 
+slug: "Bla"
+draft: TRUE
 categories:
   - R
   - ggplot
