@@ -58,7 +58,7 @@ Given the airport is located to the east of the city, a south-west approach typi
 
 My flight to Singapore is with Lufthansa, departing from Munich. I'll be on flight LH790, a service offered six times per week using the very fuel-efficient A350.
 
-Aviation is a passion of mine, so I have a gold membership at [www.flightradar24.com](http://www.flightradar24.com/). 🤓 This enables the download of the flight path for each flight over the past 365 days. I downloaded the data for the last 80 days' flights of LH790. Let's first look at the variables and the date range.
+Aviation is a passion of mine, so I have a membership at [www.flightradar24.com](http://www.flightradar24.com/). 🤓 This allows the download of the flight path for each flight over the past 365 days. I downloaded the data for the last 80 days' flights of LH790. Let's first look at the variables and the date range.
 
 ::: {.panel-tabset .nav-pills}
 ## Variables
