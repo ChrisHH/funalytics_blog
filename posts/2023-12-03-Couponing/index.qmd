@@ -40,7 +40,7 @@ update_geom_defaults("line", list(color = "#0032a0", alpha = 0.8))
 
 Imagine yourself at the checkout counter of a supermarket with a long line of unpatient customers behind you. The register shows your total as €31.28.
 
-![Source: DALL•E](images/DALL·E%202023-12-08%2022.30.01%20-%20A%20female%20buyer%20at%20the%20checkout%20of%20a%20drugstore%20is%20shown%20with%20minimal%20signs%20of%20stress,%20holding%20various%20coupons%20in%20her%20hand.%20She%20looks%20at%20them%20with%20a%20mix.png){fig-alt="A female buyer at the checkout of a drugstore is shown with minimal signs of stress, holding various coupons in her hand. She looks at them with a mix of questioning and mild panic, subtly indicating her stress over choosing the right coupon. Behind her, a line of customers is waiting, adding to the scene's tension. The cashier, with a realistic expression of mild annoyance, waits for her decision. This wide-format scene captures the everyday shopping scenario with the female buyer shown in an aesthetically appealing manner, with only slight sweat beads on her forehead." fig-align="center" width="550"}
+![Source: DALL•E](images/DALL·E 2023-12-08 23.25.03 - A realistic depiction of a supermarket checkout scene. Include a cashier, appearing professional and attentive, and a central human customer at the co.png){fig-align="center"}
 
 In this situation, which coupon of the following would you choose in order to maximize your loyalty points with the supermarket (normally, you get one point for every cent)?
 
