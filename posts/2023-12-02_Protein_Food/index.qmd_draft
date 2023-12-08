@@ -1,0 +1,183 @@
+---
+title: "Proteins!"
+author: Christian Jaehnert
+date: '2023-12-02'
+format: html
+slug: 
+categories:
+  - R
+  - ggplot
+  - tidyverse
+  - food
+  - protein
+  - calories
+  - sugar
+tags:
+  - R
+  - ggplot
+  - food
+  - protein
+  
+summary: "xxx"
+draft: true
+---
+
+```{r setup}
+#| include: false
+library(knitr)
+knitr::opts_chunk$set(cache = TRUE, cache.lazy = FALSE, warning = FALSE, 
+                      message = FALSE, echo = FALSE, dpi = 180,
+                      fig.width = 7, fig.height = 5)
+library(tidyverse)
+library(silgelib)
+library(janitor)
+library(lubridate)
+library(tidytext)
+
+theme_set(theme_plex())
+update_geom_defaults("rect", list(fill = "#0032a0", alpha = 0.8))
+update_geom_defaults("line", list(color = "#0032a0", alpha = 0.8))
+
+```
+
+## Protein
+
+Besides all the business topics in my job, there is currently another hot topic which we speak about a lot recently. It is food and in particular healthy, protein rich food. We are trying high protein snacks, exchange recipes and plans for a protein nutrioin. I am more and more used to have a protein shake or a protein bar sometimes.
+
+But what is it actually what we eat there? These bars and shakes. What are they made of?
+
+Time to shed some light on this questions. I was crawling product information from a German retailer website. These crawled data are my foundation today.
+
+```{r}
+final_df <- read_csv2("crawled_raw_data_food_20231202140519.csv")
+```
+
+## The Data
+
+```{r}
+kcal_pattern <- "\\d+\\s*kj\\s*/\\s*\\d+\\s*kcal"
+fett_pattern <- "Fett\\s*\\d+,?\\d*\\s*g"
+kohlenhydrate_pattern <- "Kohlenhydrate\\s*\\d+,?\\d*\\s*g"
+zucker_pattern <- "Zucker\\s*\\d+,?\\d*\\s*g"
+eiweiss_pattern <- "Eiweiß\\s*\\d+,?\\d*\\s*g"
+
+
+protein <- final_df %>% 
+  filter(str_detect(Produkt, "Protein")) %>% 
+  mutate(
+    kcal = str_extract(Naehrwerte, kcal_pattern),
+    fett = str_extract(Naehrwerte, fett_pattern),
+    kohlenhydrate = str_extract(Naehrwerte, kohlenhydrate_pattern),
+    zucker = str_extract(Naehrwerte, zucker_pattern),
+    eiweiss = str_extract(Naehrwerte, eiweiss_pattern)) %>% 
+  mutate(
+    kcal = str_extract(kcal, "\\d+(?=\\s*kcal)"),
+    fett = str_extract(fett, "\\d+,?\\d*(?=\\s*g)"),
+    kohlenhydrate = str_extract(kohlenhydrate, "\\d+,?\\d*(?=\\s*g)"),
+    zucker = str_extract(zucker, "\\d+,?\\d*(?=\\s*g)"),
+    eiweiss = str_extract(eiweiss, "\\d+,?\\d*(?=\\s*g)")) %>%
+  mutate(
+    kcal = as.numeric(str_replace(kcal, ",", ".")),
+    fett = as.numeric(str_replace(fett, ",", ".")),
+    kohlenhydrate = as.numeric(str_replace(kohlenhydrate, ",", ".")),
+    zucker = as.numeric(str_replace(zucker, ",", ".")),
+    eiweiss = as.numeric(str_replace(eiweiss, ",", "."))
+  )
+
+protein <- protein %>% 
+   mutate(Brand = trimws(Brand),
+         Produkt = trimws(Produkt), 
+         gtin = str_extract(Url, "(\\d{13}|\\d{8})$")) %>% 
+  select(Brand, 
+         product = Produkt, 
+         gtin, 
+         ingredients = Zutaten, 
+         calories = kcal, 
+         fat = fett, 
+         carbs = kohlenhydrate, 
+         sugar = zucker, 
+         protein = eiweiss)
+
+
+glimpse(protein)
+```
+
+OK, what to we have? The variables are relatively self speaking. Some notes on selected variables:
+
+-   ingredients is the list of ingredients per product; it is a very long string and need to be treated for the analysis.
+-   The calories are normalized to 100g / 100 ml. In this light also the amount of fat, carbs, sugar and protein (all in gramms) are normalized.
+
+## Plausbility Check
+
+Since the data are crawled, there is always a chance of errors in the data (the more data, the higher the propability). But nutrition sience is here to help. It is well studied that the following nutritions have the follwing calories (1 g each):
+
+-   carbs 4 calories
+
+-   protein 4 calories
+
+-   fat 9 calories
+
+With this knowledge lets calculate the theoretical calories and check against the crawled calories in a plot. We woul expect a straight line, right?
+
+```{r}
+protein <- protein %>% 
+  mutate(expected_calories = 9 * fat + 4 * carbs + 4 * protein,
+         deviation = abs((expected_calories / calories - 1) * 100))
+
+protein <- protein %>% 
+  filter(deviation <= 35)
+
+protein %>%  
+  ggplot(aes(x = calories, y = expected_calories, color = deviation)) +
+  geom_point() +
+  theme_plex() +
+  labs(x = "Crawled Calories", y = "Expected Calories", color = "Dev. in %") 
+
+
+    
+```
+
+That looks quite good!
+
+No lets do a final confirmation with a explanatory linear regression model.
+
+```{r}
+lm(calories ~ carbs + protein + fat - 1, data = protein)
+```
+
+That looks also good! We see the coefficients here for carbs, protein and fat. Lets take the coefficient for the carbs. It is saying if we increase carbs by 1 g, the calories are increasing by 3.896 calories, which is close to the expected 4 calories. I am not an expert in the domain of nutrition but I would say the values above are also rules of thumb. Thats why I would consider the result of the linear model quite close and I will now delve deeper into the data.
+
+## The ingredients
+
+Now it is time, to start to look into the ingredients of the nutritional stuff. Lets first look into the overall top 20 ingredients of the pro 147 products.
+
+```{r}
+
+set.seed(123)
+sample_n(protein %>% 
+           select(ingredients), 30)
+
+protein_word <- protein %>% 
+  mutate(ingredients = gsub("\\(.*?\\)|\\d+%.*?%", "", ingredients)) %>% 
+  mutate(ingredients = gsub("[^a-zA-ZäöüßÄÖÜ ,]", "", ingredients)) %>% 
+  mutate(ingredients = gsub("\\b E \\b", " ", ingredients, ignore.case = TRUE)) %>%
+  mutate(ingredients = gsub(",\\s*,", ",", ingredients)) %>% 
+  mutate(ingredients = gsub(", g g", "", ingredients)) %>% 
+  mutate(ingredients = gsub("Kann Spuren.*", "", ingredients)) %>% 
+  tidytext::unnest_tokens(word, product, drop = FALSE)
+  tidytext::unnest_tokens(word, ingredients, drop = FALSE, token = "regex", 
+                          pattern = "\\s*,\\s*|\\s*•\\s*|\\s*·\\s*|\\s*/\\s*|\\s*●\\s*") %>% 
+  tidytext::unnest_tokens(word, product, drop = FALSE)
+```
+
+```{r}
+protein_word %>% 
+  count(word, sort = TRUE) %>% 
+  top_n(n = 20, wt = n) %>% 
+  mutate(word = fct_reorder(word, n)) %>% 
+  ggplot(aes(x = word, y = n)) +
+  geom_col() +
+  coord_flip()
+```
+
+That looks messy. It seems very common to work with percentages. Often there is also "subingredients" in a bracket.
