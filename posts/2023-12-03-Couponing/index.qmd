@@ -131,7 +131,6 @@ A practical guideline might be to prioritize coupons that offer increased loyalt
 ```{r, echo = TRUE, collapse = TRUE}
 #| code-fold: true
 #| code-summary: "Click here to unhide/hide the code."
-#| fig-cap: "Decision tree"
 
 library(rpart)
 library(rpart.plot)
