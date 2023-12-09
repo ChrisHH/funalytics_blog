@@ -108,11 +108,12 @@ wert %>%
   ggplot(aes(x = purchase_value, y = value, color = name)) +
   geom_line(linewidth = 1.3) +
   geom_abline(slope = 100, linetype = "dashed", color = "grey80") +
-  labs(x = "Purchase Value", y ="Loyalty Points", color = "Coupon") +
+  labs(x = "Purchase Value", y ="Loyalty Points", color = "") +
   scale_x_continuous(labels = scales::dollar_format(prefix = "", suffix = "€"), 
                      n.breaks = 10) +
   scale_y_continuous(labels = scales::number_format(), n.breaks = 10) +
-  scale_color_brewer(palette = "Set1")
+  scale_color_brewer(palette = "Set1") +
+  theme(legend.position = "bottom")
 ```
 
 In the plot, the dashed line represents loyalty points earned per purchase value without using a coupon.
@@ -130,6 +131,7 @@ A practical guideline might be to prioritize coupons that offer increased loyalt
 ```{r, echo = TRUE, collapse = TRUE}
 #| code-fold: true
 #| code-summary: "Click here to unhide/hide the code."
+#| fig-cap: "Decision tree"
 
 library(rpart)
 library(rpart.plot)
@@ -138,6 +140,7 @@ library(rpart.plot)
 tree <- rpart(best_option ~ purchase_value, 
               data = wert , 
               method = "class")
+
 
 rpart.plot(tree, fallen.leaves = TRUE, under = TRUE, type = 5, legend.y = NA)
 
