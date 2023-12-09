@@ -1,6 +1,11 @@
 ---
 title: ""
 type: website
+listing:
+  contents: posts
+  sort: "date desc"
+  categories: false
+  filter-ui: false
 ---
 
 ::: grid
@@ -15,14 +20,12 @@ Based in the beautiful city of Hamburg, Germany, I find myself deeply engaged in
 
 I often use R for its effectiveness in making sense of complex data, helping turn numbers into meaningful stories.
 
-My educational background includes a diploma in Medical Informatics & Biomedical Engineering, obtained in the early 2000s. Furthering my studies, I completed a Master\'s in Big Data and Business Analytics in 2021. In my career, particularly in market research, I\'ve gained a broad understanding, from basic principles to more advanced methods.
+My educational background includes a diploma in Medical Informatics & Biomedical Engineering, obtained in the early 2000s. Furthering my studies, I completed a Master's in Big Data and Business Analytics in 2021. In my career, particularly in market research, I've gained a broad understanding, from basic principles to more advanced methods.
 
 This blog shares some of the analyses I do in my spare time, and occasionally, I explore topics in Avionics, another area of interest. ✈️️
 
 To get started, you can check out my [blog](/posts.html).
-
-PS: I launched this blog in 2021 and have now completely revamped it. The older blog posts will be gradually migrated to this updated platform.
-
-You can find me on [LinkedIn](https://www.linkedin.com/in/christian-jaehnert/). Feel free to reach out to me!
 :::
 :::
+
+## My Latest Blogposts
