@@ -1,11 +1,13 @@
 ---
 title: ""
 type: website
-listing:
-  contents: posts
-  sort: "date desc"
-  categories: false
-  filter-ui: false
+toc: false
+listing: 
+  contents: posts 
+  type: grid 
+  max-items: 3
+  sort: "date desc" 
+  categories: false 
 ---
 
 ::: grid
