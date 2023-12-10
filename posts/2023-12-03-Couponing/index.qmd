@@ -120,9 +120,13 @@ In the plot, the dashed line represents loyalty points earned per purchase value
 
 Now, let's delve into the coupon details -- it's quite intriguing!
 
-The coupon offering '10,000 extra points for purchases over €30' (indicated by the red line) is not advantageous for any purchase value. Hence, one might consider discarding this coupon right away, especially if new coupon booklets are regularly available. Similarly, the coupon providing '5,000 extra points for purchases over €20' benefits customers only within a very narrow spending range.
+**Surprise: The coupon offering '10,000 extra points for purchases over €30' (indicated by the red line) is not advantageous for any purchase value.** 💡 Hence, one might consider discarding this coupon right away, especially if new coupon booklets are regularly available.
 
-Another observation is that coupons offering a relative increase in extra loyalty points perform better. As the purchase value increases, the gap between standard and extra points widens.
+Similarly, the coupon providing '5,000 extra points for purchases over €20' (green line) benefits customers only within a very narrow spending range.
+
+Another observation is that coupons offering a relative increase in extra loyalty points perform better, because as one can see in the graph, as the purchase value increases, the gap between standard and extra points widens.
+
+**From €25 on the coupon 'Quintuple points for a purchase of 25 Euros or more' is the best option!**
 
 ## Decision Tree
 
