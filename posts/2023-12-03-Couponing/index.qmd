@@ -143,7 +143,9 @@ Now, let's delve into the coupon details -- it's quite intriguing!
 
 **Surprise: The coupon offering '10,000 extra points for purchases over €30' (indicated by the red line) is not advantageous for any purchase value.** 💡 Hence, one might consider discarding this coupon right away, especially if new coupon booklets are regularly available.
 
-The coupons providing 'Triple points for a purchase of 15 Euros or more' (blue line) and '5,000 extra points for purchases over €20' (green line) benefits customers only within a very narrow spending range of €5. Let's take a brief look at the intersection around €25, where both lines intersect. Is it irrelevant which coupon one uses there? Not at all :-) The zoom shows that. Also, just before the next threshold, the coupon '5,000 extra points for purchases over €20' is preferable.
+The coupons providing 'Triple points for a purchase of 15 Euros or more' (blue line) and '5,000 extra points for purchases over €20' (green line) benefits customers only within a very narrow spending range of €5. Let's take a brief look at the intersection around €25, where both lines intersect. Is it irrelevant which coupon one uses there? (Keep in mind, this post is a goldmine for those on a mission to supercharge their loyalty points! 🚀😉)
+
+The answer: Not at all! The zoom shows that. Also, just before the next threshold, the coupon '5,000 extra points for purchases over €20' is preferable. At a spend value of €24.99 this coupon gives 2 loyalty points more 😉
 
 **From €25 on the coupon 'Quintuple points for a purchase of 25 Euros or more' is the best option!**
 
