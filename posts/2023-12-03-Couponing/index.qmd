@@ -98,7 +98,7 @@ wert <- wert %>%
   mutate(best_option = if_else(purchase_value < 15, "no_coupon", best_option))
 ```
 
-Now, let's already take a graphical look at how each coupon performs!
+That's all we need. I've now plotted the loyalty points against purchase value to visually illustrate how each coupon performs. Let's take a graphical look at the effectiveness of each offer!
 
 ::: panel-tabset
 ## Solution
