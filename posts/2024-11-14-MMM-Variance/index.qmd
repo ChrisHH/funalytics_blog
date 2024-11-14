@@ -1,0 +1,93 @@
+---
+title: "Disentangling Effects: The Secret Behind Marketing Mix Models"
+author: Christian Jaehnert
+date: '2023-11-14'
+draft: false
+format: html
+slug: 
+categories:
+  - R
+  - ggplot
+  - tidyverse
+  - bargain
+  - saving money
+  - loyalty points
+tags:
+  - R
+  - ggplot
+  - groceries
+  
+summary: "Analyzing the best option to maximize loyalty points."
+---
+
+```{r}
+#| include: false
+library(knitr)
+knitr::opts_chunk$set(cache = TRUE, cache.lazy = FALSE, warning = FALSE, 
+                      message = FALSE, echo = FALSE, dpi = 180,
+                      fig.width = 7, fig.height = 5)
+library(tidyverse)
+library(silgelib)
+
+
+theme_set(theme_plex())
+update_geom_defaults("rect", list(fill = "#0032a0", alpha = 0.8))
+update_geom_defaults("line", list(color = "#0032a0", alpha = 0.8))
+
+```
+
+### The Magic of Variance in Marketing Mix Modeling
+
+Marketing Mix Modeling (MMM) is a statistical technique in econometrics that quantifies the impact of various marketing and sales activities on sales. It also incorporates external factors that are typically beyond a company’s control, such as weather, holidays, or competitive activities.
+
+Since I work in the area of MMM, I’m often asked a similar question:
+
+*How can MMM disentangle the effects of various factors, like advertising campaigns across multiple channels, POS promotions, or weather?*
+
+The answer lies in the concept of **variance**. By capturing and analyzing the variation in data, MMM can attribute changes in sales to specific factors like advertising, price changes, or external conditions such as weather. In turn this explains why a MMM is typically very greedy on data!
+
+Variance is essentially the "spread" or "dispersion" in data. When factors such as advertising spend, product pricing, and weather fluctuate, they create unique "patterns" in the data. These patterns allow MMM to distinguish the unique contribution of each factor to the overall sales. The model then estimates each variable’s impact by looking at how variations in these variables align with variations in sales over time.
+
+To demonstrate this in a simple example, let’s take an ice cream company and see how MMM might work to disentangle the effects of advertising, temperature, and price.
+
+### Example: Ice Cream Sales and the Magic of Variance
+
+In this example, we’ll simulate weekly ice cream sales data over three years (152 weeks) along with three explanatory variables: advertising spend, average weekly temperature, and the price of ice cream.
+
+```{r}
+
+# Load required libraries
+library(tidyverse)
+
+# Set seed for reproducibility
+set.seed(42)
+
+# Generate 152 weeks of data
+weeks <- 152
+
+# Create random weekly values for temperature (20-35 °C), ad spend, and price
+temperature <- runif(weeks, 20, 35) # Temperature in degrees Celsius
+ad_spend <- round(runif(weeks, 1000, 5000), 2) # Advertising spend in dollars
+price <- round(runif(weeks, 1.5, 3), 2) # Ice cream price per unit in dollars
+
+# Simulate weekly ice cream sales (base + effects)
+base_sales <- 500 # Base weekly sales
+sales <- base_sales + 20 * temperature + 0.03 * ad_spend - 150 * price + rnorm(weeks, 0, 100)
+
+# Combine into a data frame
+data <- data.frame(
+  Week = 1:weeks,
+  Temperature = temperature,
+  Ad_Spend = ad_spend,
+  Price = price,
+  Sales = sales
+)
+
+# Build the Marketing Mix Model
+mmm_model <- lm(Sales ~ Temperature + Ad_Spend + Price, data = data)
+
+# Summary of the model to see the impact of each variable
+summary(mmm_model)
+
+
+```
