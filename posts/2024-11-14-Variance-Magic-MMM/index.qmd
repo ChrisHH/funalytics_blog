@@ -2,7 +2,7 @@
 title: "Disentangling Effects: The Secret Behind Marketing Mix Models"
 author: Christian Jaehnert
 date: '2023-11-14'
-draft: false
+draft: true
 format: html
 slug: 
 categories:
