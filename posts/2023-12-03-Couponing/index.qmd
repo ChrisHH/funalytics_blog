@@ -173,4 +173,4 @@ rpart.plot(tree, fallen.leaves = TRUE, under = TRUE, type = 5, legend.y = NA)
 
 Have fun cutting the decision tree out and tucking them into your wallet 😃
 
-Until next time!!
+Until next time!
