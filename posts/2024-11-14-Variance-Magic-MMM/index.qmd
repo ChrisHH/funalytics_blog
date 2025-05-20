@@ -1,23 +1,21 @@
 ---
 title: "Disentangling Effects: The Secret Behind Marketing Mix Models"
 author: Christian Jaehnert
-date: '2023-11-14'
+date: '2023-11-20'
 draft: true
 format: html
 slug: 
+
 categories:
   - R
-  - ggplot
-  - tidyverse
-  - bargain
-  - saving money
-  - loyalty points
+  - Marketing Mix Modell
+  - Disentangle Effects
+  - Ice Cream
 tags:
   - R
   - ggplot
-  - groceries
   
-summary: "Analyzing the best option to maximize loyalty points."
+summary: "Providing intuition on how a model can isolate effects."
 ---
 
 ```{r}
@@ -33,34 +31,66 @@ library(silgelib)
 theme_set(theme_plex())
 update_geom_defaults("rect", list(fill = "#0032a0", alpha = 0.8))
 update_geom_defaults("line", list(color = "#0032a0", alpha = 0.8))
+update_geom_defaults("point", list(color = "#0032a0", alpha = 0.8))
 
 ```
 
 ### The Magic of Variance in Marketing Mix Modeling
 
-Marketing Mix Modeling (MMM) is a statistical technique in econometrics that quantifies the impact of various marketing and sales activities on sales. It also incorporates external factors that are typically beyond a company’s control, such as weather, holidays, or competitive activities.
+Marketing Mix Modeling (MMM) is a statistical technique in econometrics that quantifies the impact of various marketing and sales activities on sales of a company. It also incorporates external factors that are typically beyond a company’s control, such as weather, holidays, or competitive activities.
 
 Since I work in the area of MMM, I’m often asked a similar question:
 
-*How can MMM disentangle the effects of various factors, like advertising campaigns across multiple channels, POS promotions, or weather?*
+**How can MMM actually disentangle the effects of various factors, like advertising campaigns across multiple media channels, POS promotions, or weather? How does this "disentangling" work?**
 
-The answer lies in the concept of **variance**. By capturing and analyzing the variation in data, MMM can attribute changes in sales to specific factors like advertising, price changes, or external conditions such as weather. In turn this explains why a MMM is typically very greedy on data!
+The answer lies in the concept of **variance**. By capturing and analyzing the variation in data, MMM can attribute changes in sales to specific factors like advertising, price changes, or external conditions such as weather – precisely the variance of these factors. In turn, this explains why MMMs are typically very greedy on data.
+
+#### Why Variance Matters
 
 Variance is essentially the "spread" or "dispersion" in data. When factors such as advertising spend, product pricing, and weather fluctuate, they create unique "patterns" in the data. These patterns allow MMM to distinguish the unique contribution of each factor to the overall sales. The model then estimates each variable’s impact by looking at how variations in these variables align with variations in sales over time.
 
-To demonstrate this in a simple example, let’s take an ice cream company and see how MMM might work to disentangle the effects of advertising, temperature, and price.
+To illustrate, imagine observing the temperature in a city where ice cream is sold. If the temperature were always a constant 25°C, there would be no variance in the temperature, and the model couldn’t estimate the effect of temperature on sales of the ice cream. However, if the temperature fluctuates the model can analyze how sales change as the temperature rises or falls, attributing a portion of the sales changes to temperature change.
 
-### Example: Ice Cream Sales and the Magic of Variance
+#### Variance and Independence
 
-In this example, we’ll simulate weekly ice cream sales data over three years (152 weeks) along with three explanatory variables: advertising spend, average weekly temperature, and the price of ice cream.
+Another crucial aspect of variance is how independent it is across variables. If variables such as advertising spend and temperature are strongly correlated – for example, if higher advertising spend always coincides with warmer weather – it becomes harder for the model to distinguish their effects. This issue, called **multicollinearity**, can obscure the true influence of each factor.
+
+Ideally, each variable should have its own distinct and independent variance to enable the model to disentangle their contributions clearly. This is one reason why MMMs often require large, granular datasets – they help ensure sufficient variation and independence among factors.
+
+#### Variance as the Key to Disentangling
+
+In summary, variance is the foundation of how MMMs work. By identifying and analyzing differences in data, the model can separate the effects of multiple factors on sales. More variance means better opportunities to isolate these effects, making high-quality, diverse data essential for effective modeling. This ability to leverage variance is what gives MMMs their "magic" when it comes to attributing outcomes.
+
+::: {.callout-note appearance="minimal"}
+This post does not strive for statistical correctness. It should rather provide an intuitional view on how it works.
+:::
+
+### Giving Intuition - Ice Cream
+
+To demonstrate this in a simple example, let’s take an ice cream company and see how MMM might work to disentangle the effects of advertising, temperature, and price on sales.
+
+#### Data Exploration
+
+In this example, we’ll simulate weekly ice cream sales data over three years (152 weeks) along with three explanatory variables:
+
+-   advertising spend,
+
+-   average weekly temperature,
+
+-   and the price of ice cream.
+
+The ice creams sales (dependent variable) we want to explain by the three variables above (independent variables).
+
+To not over-complicate things, in this example we assume the ice cream is sold in a market with warm temperatures (20°C - 35°C) across the year. Likewise we take the advertising spend into consideration, which is usually not best practice due to seasonality of media costs. That's why one actually should use an activity metric. But in this example, for the sake of intuition, we remain with the spend. Furthermore the three independent variables are correlated to a a minimum.
+
+#### Exploration of Ice Cream Sales
 
 ```{r}
 
-# Load required libraries
-library(tidyverse)
+library(dplyr)
+library(janitor)
 
-# Set seed for reproducibility
-set.seed(42)
+set.seed(1234)
 
 # Generate 152 weeks of data
 weeks <- 152
@@ -81,15 +111,190 @@ data <- data.frame(
   Ad_Spend = ad_spend,
   Price = price,
   Sales = sales
-)
+) %>% 
+  clean_names()
 
-# Build the Marketing Mix Model
-mmm_model <- lm(Sales ~ Temperature + Ad_Spend + Price, data = data)
+```
 
-# Summary of the model to see the impact of each variable
-summary(mmm_model)
+```{r}
+
+data %>% 
+  ggplot(aes(x = week, y = ad_spend)) +
+  geom_line() +
+  labs(y = "Sales", x = "Week") +
+  scale_y_continuous(labels = scales::dollar_format(prefix = "€"), limits = c(0,NA))
+  
+```
+
+This is the time series of the sales of ice cream over 152 consecutive weeks. We can see lots of variation (weekly ups and downs of the sales). Typically, variation is captured using standardized metrics in statistics. Let's explore this further.
+
+```{r}
+
+skimr::skim(data %>% select(sales)) %>% 
+  kable()
+
+```
+
+The average weekly sales amount to 786 Euros, with a standard deviation of 142 Euros. This indicates that, on average, weekly sales fluctuate by approximately ±142 Euros around the mean. In other words, most weeks (about 68%, assuming a normal distribution) see sales between 644 Euros and 928 Euros.
+
+Further more we can see the min (percentile 0) and max (percentile 100), giving us the range of the variation, from 455 Euros to 1186 Euros.
+
+#### Connection with Sales
+
+No we need to go one step further and check the bi-variate connection of each factor impacting the sales. To visually inspect the connection properly, in statistics it is very common to use a scatter plot. Since ice cream sales is the dependent variable, we put this on the y-axis and the other variables on the x-axis.
+
+::: panel-tabset
+## Sales - Temperature
+
+```{r}
+data %>% 
+  ggplot(aes(y = sales, x = temperature)) +
+  geom_point() +
+  xlim(0, NA) +
+  ylim(0, NA) +
+  labs(y = "Sales", x = "Temperature in °C") +
+  scale_y_continuous(labels = scales::dollar_format(prefix = "€"), limits = c(0,NA))
+```
+
+## Sales - Ad Spend
+
+```{r}
+data %>% 
+  ggplot(aes(y = sales, x = ad_spend)) +
+  geom_point() +
+  labs(y = "Sales", x = "Ad Spend") +
+  scale_y_continuous(labels = scales::dollar_format(prefix = "€"), limits = c(0,NA)) +
+  scale_x_continuous(labels = scales::dollar_format(prefix = "€"), limits = c(0,NA))
+
+```
+
+## Sales - Price
+
+```{r}
+data %>% 
+  ggplot(aes(y = sales, x = price)) +
+  geom_point() +
+  labs(y = "Sales", x = "Price") +
+  scale_y_continuous(labels = scales::dollar_format(prefix = "€"), limits = c(0,NA)) +
+  scale_x_continuous(labels = scales::dollar_format(prefix = "", suffix = "€", accuracy = 0.01), limits = c(0,NA))
+
+```
+:::
+
+We can clearly see: the warmer it is, the higher the sales. But also: the more is spent in advertising.\
+And intuitively: the higher the price, the less the sales.
+
+#### Creating Intuition
+
+Now there is the problem going further: how can the model, which explains overall sales know, what is driven by what impacting factor and to what extend? As we already learned: it is about the variation. We will know give intuition about this concept and how it helps to disentangle the effects.
+
+Therefore we will calculate the average of each indepentent variable and then for each week check if it is above average or below average. For each week and variable, the we calculate an indicator variables, showing if the actual value in the respective week is above or below the average. This information will be transformed into 1 and 0 accordingly. And then we paste the information in one string, and simply count the occurrence. The order of the string is: "temperature above everage", "ad_spend_above_average" and "price_above_average".
+
+Lets see the result.
+
+```{r}
+
+data %>% 
+  mutate(sales_avg = mean(sales),
+         temp_avg = mean(temperature),
+         ad_spend_avg = mean(ad_spend),
+         price_avg = mean(price)) %>% 
+  mutate(sales_above_average = if_else(sales - sales_avg > 0, 1, 0),
+         temp_above_average = if_else(temperature - temp_avg > 0, 1, 0),
+         ad_spend_above_average = if_else(ad_spend - ad_spend_avg > 0, 1, 0),
+         price_above_average = if_else(price - price_avg > 0, 1, 0)) %>% 
+  mutate(combination = paste(temp_above_average, ad_spend_above_average, price_above_average)) %>% 
+  count(combination, sort = TRUE) %>% 
+  arrange(combination) %>% 
+  kable()
 
 
 ```
 
-2+3
+How to read this?
+
+There is 22 cases in the data, where all the independent variables are above its average (1 1 1). And there is almost all possible combinations of being a variable above or below its average, e.g. 16 occurences, where all thre independent variables are below average.
+
+Now what we want to do this is, per group, add the average sales of this group.
+
+```{r}
+data %>% 
+  mutate(sales_avg = mean(sales),
+         temp_avg = mean(temperature),
+         ad_spend_avg = mean(ad_spend),
+         price_avg = mean(price)) %>% 
+  mutate(sales_above_average = if_else(sales - sales_avg > 0, 1, 0),
+         temp_above_average = if_else(temperature - temp_avg > 0, 1, 0),
+         ad_spend_above_average = if_else(ad_spend - ad_spend_avg > 0, 1, 0),
+         price_above_average = if_else(price - price_avg > 0, 1, 0)) %>% 
+  mutate(combination = paste(temp_above_average, 
+                             ad_spend_above_average, 
+                             price_above_average)) %>% 
+  group_by(combination) %>% 
+  summarise(average_sales = mean(sales)) %>% 
+  arrange(combination) %>% 
+  kable()
+
+```
+
+Thats very interesting. In the 16 weeks, where all variables are below its average, the average sales are 707,81 Euro. If the price increases above its average, the sales drops even more to 619,21 Euros (I would say, this forms the worst conditions for ice cream sales: colder temperatures, lower advertising and higher prices). Likewise, if it is warmer than the average, and the sales are supported by advertising and the prices are decreasing, then we see the hightest sales of 937,65 Euros.
+
+Now lets make a twist, and arrange not by the combination but the average sales.
+
+```{r}
+data %>% 
+  mutate(sales_avg = mean(sales),
+         temp_avg = mean(temperature),
+         ad_spend_avg = mean(ad_spend),
+         price_avg = mean(price)) %>% 
+  mutate(sales_above_average = if_else(sales - sales_avg > 0, 1, 0),
+         temp_above_average = if_else(temperature - temp_avg > 0, 1, 0),
+         ad_spend_above_average = if_else(ad_spend - ad_spend_avg > 0, 1, 0),
+         price_above_average = if_else(price - price_avg > 0, 1, 0)) %>% 
+  mutate(combination = paste(temp_above_average, 
+                             ad_spend_above_average, 
+                             price_above_average)) %>% 
+  group_by(combination) %>% 
+  summarise(average_sales = mean(sales)) %>% 
+  arrange(average_sales) %>% 
+  kable()
+
+```
+
+We can see that we see the "1" at the start of the combination, indicating the weather, is rather at the bottom. Hence we can generalize: the warmer, the more ice cream sold. We can on the opposite see, the negative impact of the price. For the ad spend it is not so clear. What we can conclude here is, that the model will most likley come to the conclusion, that the price as such as a negative impact (negativ sign). And also that temperature will most likely have the strongest positive impact on sales.
+
+#### Actual Model
+
+Lets check the assumption from the previous chapter and create the model.
+
+::: panel-tabset
+## Not Standardized
+
+```{r}
+mmm_model <- lm(sales ~ (temperature) + (ad_spend) + (price), data = data)
+summary(mmm_model)
+
+```
+
+## Standardized
+
+```{r}
+mmm_model <- lm(sales ~ scale(temperature) + scale(ad_spend) + scale(price), data = data)
+summary(mmm_model)
+
+```
+:::
+
+The best way to compare the coefficients is the standardized view, as each independent variable has a different scale (e.g., euros, degrees Celsius). Standardization brings all variables onto the same scale by centering them around their mean and dividing by their standard deviation. This ensures that the effects are comparable, regardless of their original units. A higher standardized coefficient indicates which factor has the strongest influence, independent of its initial scale.
+
+The model results confirm our assumptions. **Temperature** has the strongest positive impact on sales, with a standardized coefficient of **82.4**, followed by **advertising spend** at **39.2**. **Price**, as expected, has a negative impact, with a coefficient of **-63.98**, meaning higher prices significantly reduce sales. All these coefficients are statistically significant at the **p \< 0.001**level, showing robust relationships.
+
+The model explains approximately **56.5% of the variation** in sales (**R-squared = 0.5654**) and has a residual standard error of **95.06**. The explanation of variance is not the best, and I would be rather careful with this model. Obviously there is sales-driving factors, which are not captured in the model (e.g. could be the friendliness of the sales staff, the selling place, but also the economic situation of the clients).
+
+In summary, warmer temperatures and increased advertising positively influence sales, while higher prices reduce them, with temperature being the dominant driver.
+
+### Conclusion
+
+This post aimed to provide an intuitive understanding of how Marketing Mix Models disentangle effects. By leveraging variance and observing patterns in data, MMM can quantify the impact of different factors like temperature, advertising, and price on sales. Standardizing variables ensures fair comparisons of their influence, while analyzing combinations of factors reveals deeper insights into their interactions.
+
+In practice, MMMs are invaluable tools for understanding what drives sales, but their accuracy depends on data quality and variance. By applying these principles, businesses can make more informed marketing decisions.

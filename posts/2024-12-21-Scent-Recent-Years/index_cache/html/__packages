@@ -1,3 +1,10 @@
+base
+methods
+datasets
+utils
+grDevices
+graphics
+stats
 knitr
 tidyverse
 ggplot2
@@ -10,4 +17,5 @@ stringr
 forcats
 lubridate
 silgelib
-janitor
+tidytext
+shiny

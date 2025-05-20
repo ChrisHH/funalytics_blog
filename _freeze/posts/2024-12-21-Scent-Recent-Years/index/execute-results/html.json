@@ -1,0 +1,15 @@
+{
+  "hash": "6ad551fa8619fab5aa14c444635fdbf8",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Hit or Miss? The Scents of Recent Years\"\nauthor: Christian Jaehnert\ndate: '2023-12-21'\ndraft: true\nformat: html\nslug: \n\ncategories:\n  - R\n  - Parfum\n  - Scent\ntags:\n  - R\n  - ggplot\n  \nsummary: \"Evolution of scents over the last decades.\"\n---\n\n\n\n::: {.cell}\n\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

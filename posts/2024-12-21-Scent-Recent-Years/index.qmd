@@ -1,0 +1,57 @@
+---
+title: "Hit or Miss? The Scents of Recent Years"
+author: Christian Jaehnert
+date: '2023-12-21'
+draft: true
+format: html
+slug: 
+
+categories:
+  - R
+  - Parfum
+  - Scent
+tags:
+  - R
+  - ggplot
+  
+summary: "Evolution of scents over the last decades."
+---
+
+```{r}
+#| include: false
+library(knitr)
+knitr::opts_chunk$set(cache = TRUE, cache.lazy = FALSE, warning = FALSE, 
+                      message = FALSE, echo = FALSE, dpi = 180,
+                      fig.width = 7, fig.height = 5)
+library(tidyverse)
+library(silgelib)
+
+
+theme_set(theme_plex())
+update_geom_defaults("rect", list(fill = "#0032a0", alpha = 0.8))
+update_geom_defaults("line", list(color = "#0032a0", alpha = 0.8))
+update_geom_defaults("point", list(color = "#0032a0", alpha = 0.8))
+
+
+
+
+tuesdata <- tidytuesdayR::tt_load('2024-12-10')
+
+parfumo_data_clean <- tuesdata$parfumo_data_clean %>% janitor::clean_names()
+
+rm(tuesdata)
+
+
+```
+
+```{r}
+
+library(tidytext)
+
+parfumo_data_clean %>% 
+  select(name, release_year, rating_value, top_notes) %>% 
+  unnest_tokens(word, top_notes) %>% 
+  group_by(release_year) %>% 
+  count(word) %>% 
+  esquisse::esquisser()
+```
