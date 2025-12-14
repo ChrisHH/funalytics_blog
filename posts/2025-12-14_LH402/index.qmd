@@ -1,7 +1,257 @@
 ---
-title: "Untitled"
+title: "Flight LH402 (FRA - EWR)"
+draft: true
+author: Christian Jaehnert
+date: '2025-12-14'
+format: html
+slug: 
+categories:
+  - R
+  - ggplot
+  - tidyverse
+  - aviation
+  - FRA
+  - EWR
+  - flights
+tags:
+  - R
+  - ggplot
+  - aviation
+  - travel
+  
+summary: "I analyze which plane will be used."
 ---
 
-Hello!
+# Flight LH402
 
-This is a test.
+Soon I will be heading for New York for the X-Mas break. I will be flying from Hamburg to Newark (EWR) via Frankfurt (FRA) with Lufthansa. On the leg from FRA-EWR Lufthansa is operating with the queen of the skies, the legend Boeing 747.
+
+In this short post, I will check which airplane I will most likely fly with.
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(janitor)
+library(lubridate)
+
+data <- read_xlsx("input/LH402.xlsx") |> 
+  clean_names() |> 
+  select(-unnamed_8, -unnamed_10, -date)
+
+
+data <- data |> 
+  mutate(datum = as.Date(datum, format = "%d.%m.%Y")) |> 
+  filter(datum < "2025-12-14")
+
+data <- data |> 
+  mutate(registration = str_extract(aircraft, "(?<=\\().*(?=\\))")) |> 
+  select(-aircraft)
+
+data <- data |>
+  mutate(
+    date0 = as_datetime(ymd(datum), tz = "Europe/Berlin"),
+    std = lubridate::hms(std) + date0,
+    atd = lubridate::hms(atd) + date0,
+    sta = lubridate::hms(sta) + date0,
+    ata = lubridate::hm(str_extract(status, "\\d{2}:\\d{2}")) + date0,
+    flight_time = lubridate::hms(flight_time),
+    dep_delay_min = as.numeric(difftime(atd, std, units = "mins")),
+    arr_delay_min = as.numeric(difftime(ata, sta, units = "mins")),
+    dow = wday(datum, label = TRUE, week_start = 1),
+    month = floor_date(datum, "month")
+  ) |>
+  select(-status, -date0)
+```
+
+```{r}
+data |> 
+  summarise(
+    # flight_time → numeric (Sekunden) → Mittelwert → wieder Period
+    mean_flight_time = seconds_to_period(mean(as.numeric(flight_time), na.rm = TRUE))
+  )
+
+
+
+
+
+data %>%
+  mutate(month = floor_date(datum, "month")) %>%
+  group_by(month) %>%
+  summarise(
+    mean_flight_time_sec = mean(as.numeric(flight_time), na.rm = TRUE)
+  ) %>%
+  mutate(mean_flight_time_hours = mean_flight_time_sec / 3600) %>%  # Sek → Stunden
+  ggplot(aes(x = month, y = mean_flight_time_hours)) +
+  geom_col() +
+  labs(
+    y = "Mittlere Flugzeit (Stunden)",
+    x = "Monat",
+    title = "Mittlere Flugzeit pro Monat"
+  ) +
+  theme_minimal()
+
+
+
+data %>%
+  group_by(registration) %>%
+  summarise(
+    mean_flight_time_sec = mean(as.numeric(flight_time), na.rm = TRUE)
+  ) %>%
+  mutate(mean_flight_time_hours = mean_flight_time_sec / 3600) %>%  # Sek → Stunden
+  mutate(registration = fct_reorder(registration, mean_flight_time_hours)) |> 
+  ggplot(aes(x = registration, y = mean_flight_time_hours)) +
+  geom_col() +
+  labs(
+    y = "Mittlere Flugzeit (Stunden)",
+    x = "Monat",
+    title = "Mittlere Flugzeit pro Monat"
+  ) +
+  theme_minimal() +
+  coord_flip()
+
+
+data %>%
+  mutate(month = floor_date(datum, "month")) %>%
+  group_by(datum) |> 
+  count(registration) |> 
+  ggplot(aes(x = datum, y = n, group = registration, color = registration))+
+  geom_point() +
+  geom_line() +
+  facet_wrap(vars(registration))
+
+
+data |> 
+  count(registration, sort = TRUE) |> 
+  mutate(share = n / sum(n))
+  
+
+
+
+
+
+
+```
+
+```{r}
+data |>
+  summarise(
+    flights = n(),
+    first_date = min(datum, na.rm = TRUE),
+    last_date  = max(datum, na.rm = TRUE),
+    registrations = n_distinct(registration),
+    mean_dep_delay_min = mean(dep_delay_min, na.rm = TRUE),
+    mean_arr_delay_min = mean(arr_delay_min, na.rm = TRUE),
+    share_arrived_within_15min = mean(arr_delay_min <= 15, na.rm = TRUE)
+  )
+```
+
+```{r}
+
+reg_counts <- data |>
+  count(registration, sort = TRUE) |>
+  mutate(share = n / sum(n))
+
+
+reg_counts |>
+  slice_head(n = 10) |>
+  ggplot(aes(x = fct_reorder(registration, n), y = n)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "LH402: most frequent registrations",
+    x = NULL,
+    y = "Number of flights in sample"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+
+predict_from_last_n <- function(df, n_last = 20) {
+  df |>
+    arrange(datum) |>
+    slice_tail(n = n_last) |>
+    count(registration, sort = TRUE) |>
+    mutate(share = n / sum(n), window = paste0("last_", n_last))
+}
+
+pred_10 <- predict_from_last_n(data, 10)
+pred_20 <- predict_from_last_n(data, 20)
+pred_30 <- predict_from_last_n(data, 30)
+
+bind_rows(pred_10, pred_20, pred_30) |>
+  group_by(window) |>
+  slice_head(n = 5) |>
+  ungroup()
+
+
+
+bind_rows(pred_10, pred_20, pred_30) |>
+  slice_max(share, n = 8, with_ties = TRUE) |>
+  ggplot(aes(x = fct_reorder(registration, share), y = share, fill = window)) +
+  geom_col(position = "dodge") +
+  coord_flip() +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  labs(
+    title = "Most likely aircraft by recent windows",
+    x = NULL,
+    y = "Share of flights"
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+stability <- data |>
+  arrange(datum) |>
+  mutate(reg_next = lead(registration)) |>
+  summarise(
+    prob_same_next_flight = mean(registration == reg_next, na.rm = TRUE)
+  )
+
+
+stability
+
+
+transitions <- data |>
+  arrange(datum) |>
+  mutate(reg_next = lead(registration)) |>
+  filter(!is.na(reg_next)) |>
+  count(registration, reg_next, sort = TRUE)
+
+
+
+transitions |>
+  group_by(registration) |>
+  mutate(p = n / sum(n)) |>
+  ungroup() |>
+  slice_max(p, n = 1, with_ties = FALSE) |>
+  arrange(desc(p)) |>
+  ggplot(aes(x = fct_reorder(registration, p), y = p)) +
+  geom_col() +
+  coord_flip() +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  labs(
+    title = "For each registration: most likely next registration",
+    x = NULL,
+    y = "Transition probability"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+overall <- data |>
+  count(registration, sort = TRUE) |>
+  mutate(overall_share = n / sum(n)) |>
+  select(registration, overall_share)
+
+recent20 <- predict_from_last_n(data, 20) |>
+  select(registration, recent_share = share)
+
+pick <- full_join(overall, recent20, by = "registration") |>
+  replace_na(list(overall_share = 0, recent_share = 0)) |>
+  mutate(score = 0.5 * overall_share + 0.5 * recent_share) |>
+  arrange(desc(score))
+
+pick |> slice_head(n = 10)
+```
