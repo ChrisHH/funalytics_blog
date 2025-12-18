@@ -1,6 +1,6 @@
 ---
 title: "Flight LH402 (FRA - EWR)"
-draft: true
+draft: false
 author: Christian Jaehnert
 date: '2025-12-14'
 format: html
@@ -19,20 +19,29 @@ tags:
   - aviation
   - travel
   
-summary: "I analyze which plane will be used."
+summary: "I analyze which registration will be used on my flight."
 ---
 
 # Flight LH402
 
-Soon I will be heading for New York for the X-Mas break. I will be flying from Hamburg to Newark (EWR) via Frankfurt (FRA) with Lufthansa. On the leg from FRA-EWR Lufthansa is operating with the queen of the skies, the legend Boeing 747.
+Soon I will be heading for New York for the Christmas break. I’ll be flying from Hamburg to Newark (EWR) via Frankfurt (FRA) with Lufthansa. On the leg from FRA-EWR Lufthansa is operating with the queen of the skies, the legend Boeing 747.
 
-In this short post, I will check which airplane I will most likely fly with.
+![source: Unsplash (Lukas Souza)](images/lukas-souza-uQwSG21HiXs-unsplash.jpg){fig-align="center"}
+
+In this short post, I’ll check some stats of this flight throughout the past year and and toward the end, I’ll also try to predict the registration of the aircraft, I will fly with.
+
+The foundation of this analysis is data from Flightradar24 about flight LH402 throughout the past year on a daily basis.
 
 ```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
 library(tidyverse)
 library(readxl)
 library(janitor)
 library(lubridate)
+library(silgelib)
 
 data <- read_xlsx("input/LH402.xlsx") |> 
   clean_names() |> 
@@ -63,195 +72,330 @@ data <- data |>
   select(-status, -date0)
 ```
 
-```{r}
-data |> 
-  summarise(
-    # flight_time → numeric (Sekunden) → Mittelwert → wieder Period
-    mean_flight_time = seconds_to_period(mean(as.numeric(flight_time), na.rm = TRUE))
-  )
-
-
-
-
-
-data %>%
-  mutate(month = floor_date(datum, "month")) %>%
-  group_by(month) %>%
-  summarise(
-    mean_flight_time_sec = mean(as.numeric(flight_time), na.rm = TRUE)
-  ) %>%
-  mutate(mean_flight_time_hours = mean_flight_time_sec / 3600) %>%  # Sek → Stunden
-  ggplot(aes(x = month, y = mean_flight_time_hours)) +
-  geom_col() +
-  labs(
-    y = "Mittlere Flugzeit (Stunden)",
-    x = "Monat",
-    title = "Mittlere Flugzeit pro Monat"
-  ) +
-  theme_minimal()
-
-
-
-data %>%
-  group_by(registration) %>%
-  summarise(
-    mean_flight_time_sec = mean(as.numeric(flight_time), na.rm = TRUE)
-  ) %>%
-  mutate(mean_flight_time_hours = mean_flight_time_sec / 3600) %>%  # Sek → Stunden
-  mutate(registration = fct_reorder(registration, mean_flight_time_hours)) |> 
-  ggplot(aes(x = registration, y = mean_flight_time_hours)) +
-  geom_col() +
-  labs(
-    y = "Mittlere Flugzeit (Stunden)",
-    x = "Monat",
-    title = "Mittlere Flugzeit pro Monat"
-  ) +
-  theme_minimal() +
-  coord_flip()
-
-
-data %>%
-  mutate(month = floor_date(datum, "month")) %>%
-  group_by(datum) |> 
-  count(registration) |> 
-  ggplot(aes(x = datum, y = n, group = registration, color = registration))+
-  geom_point() +
-  geom_line() +
-  facet_wrap(vars(registration))
-
-
-data |> 
-  count(registration, sort = TRUE) |> 
-  mutate(share = n / sum(n))
-  
-
-
-
-
-
-
-```
+And here is a very first glimpse on the dataset used.
 
 ```{r}
+#| echo: false
+#| message: true
+#| warning: false
+
 data |>
   summarise(
     flights = n(),
     first_date = min(datum, na.rm = TRUE),
     last_date  = max(datum, na.rm = TRUE),
-    registrations = n_distinct(registration),
-    mean_dep_delay_min = mean(dep_delay_min, na.rm = TRUE),
-    mean_arr_delay_min = mean(arr_delay_min, na.rm = TRUE),
-    share_arrived_within_15min = mean(arr_delay_min <= 15, na.rm = TRUE)
+    registrations = n_distinct(registration)
   )
+
 ```
 
+We have data from 362 LH402 flights, ranging from Dec 14th 2024 to Dec 13th 2025 with 22 different (distinct) registrations (aircraft)
+
+## Flighttime
+
 ```{r}
+#| echo: false
+#| message: false
+#| warning: false
 
-reg_counts <- data |>
-  count(registration, sort = TRUE) |>
-  mutate(share = n / sum(n))
+mean_flight_time <- data |>
+  summarise(mean_sec = mean(as.numeric(flight_time), na.rm = TRUE), .groups = "drop") |>
+  mutate(
+    mean_min = round(mean_sec / 60),   # auf Minuten runden
+    h = mean_min %/% 60,
+    m = mean_min %% 60,
+    mean_flight_time = sprintf("%d:%02d h", h, m)
+  ) |>
+  pull(mean_flight_time)
+```
 
+In the last 362 days, the average flight time was `r mean_flight_time`. But how was this different by month? Lets check!
 
-reg_counts |>
-  slice_head(n = 10) |>
-  ggplot(aes(x = fct_reorder(registration, n), y = n)) +
+```{r}
+#| echo: false
+#| message: true
+#| warning: false
+
+data |>
+  group_by(month) |>
+  summarise(
+    mean_flight_sec = mean(as.numeric(flight_time), na.rm = TRUE),
+    mean_flight_label = {
+      mean_min <- round(mean_flight_sec / 60)
+      sprintf("%d:%02d h", mean_min %/% 60, mean_min %% 60)
+    },
+    .groups = "drop"
+  ) |>
+  ggplot(aes(x = month, y = mean_flight_sec, label = mean_flight_label)) +
   geom_col() +
-  coord_flip() +
-  labs(
-    title = "LH402: most frequent registrations",
-    x = NULL,
-    y = "Number of flights in sample"
-  ) +
-  theme_minimal()
+  scale_y_continuous(labels = function(x) format(hms::as_hms(x))) +
+  labs(x = "Month", y = "Mean Flight Time") +
+  geom_label(size = 2.5) +
+  theme_plex()
+
 ```
+
+It appears that there is a seasonal effect (though we are looking only into one year). Obviously during spring and summer months (in Germany) the flight time is a bit shorter. There might be different reasons why this is, but the most likely one is the different behavior of the Jetstream. Since I’ll be flying still in December I am expecting a slightly longer flight time.
+
+## Timliness
+
+Of course, I’m very interested in the timeliness of the flight and will investigate this a bit. Here we will look into the difference of scheduled time of departure vs. actual time of departure.
+
+::: panel-tabset
+## All Flights
+
+```{r}
+#| echo: false
+#| message: true
+#| warning: false
+
+
+m <- data |> 
+  summarise(m = mean(dep_delay_min, na.rm = TRUE)) |> 
+  pull(m)
+
+data |>
+  ggplot(aes(x = dep_delay_min)) +
+  geom_histogram() +
+  geom_vline(xintercept = m, linetype = "dashed", linewidth = 1) +
+  annotate("text", x = m, y = Inf, label = round(m, 1), vjust = 1.2) +
+  theme_plex() +
+  labs(x = "Departure Delay in min", y = "Count" )
+```
+
+## Flights w/o Outliers
+
+```{r}
+#| echo: false
+#| message: true
+#| warning: false
+
+m <- data |> 
+  filter(dep_delay_min < 200) |> 
+  summarise(m = mean(dep_delay_min, na.rm = TRUE)) |> 
+  pull(m)
+
+m <- round(m, 2)
+
+data |>
+  filter(dep_delay_min < 200) |> 
+  ggplot(aes(x = dep_delay_min)) +
+  geom_histogram() +
+  geom_vline(xintercept = m, linetype = "dashed", linewidth = 1) +
+  annotate("text", x = m, y = Inf, label = round(m, 1), vjust = 1.2) +
+  theme_plex() +
+  labs(x = "Departure Delay in min", y = "Count" )
+```
+:::
+
+The mean departure delay is 44.5 minutes. In the majority cases it is luckily below, and there is one case with a delay of \~550 minutes. To account for this, there is another tab, which shows the average delay time, by removing all flights with a delay of more than 200 minutes - it is less: 43.1 minutes.
+
+Most important is to understand, what the impact on arrival timeliness is. Therefore let’s check arrival delays.
+
+::: panel-tabset
+## All flights
+
+```{r}
+#| echo: false
+#| message: true
+#| warning: false
+
+
+m <- data |> 
+  summarise(m = mean(arr_delay_min, na.rm = TRUE)) |> 
+  pull(m)
+
+data |>
+  ggplot(aes(x = arr_delay_min)) +
+  geom_histogram() +
+  geom_vline(xintercept = m, linetype = "dashed", linewidth = 1) +
+  annotate("text", x = m, y = Inf, label = round(m, 1), vjust = 1.2) +
+  theme_plex() +
+  labs(x = "Departure Delay in min", y = "Count" )
+```
+
+## Flights w/o Outliers
 
 ```{r}
 
-predict_from_last_n <- function(df, n_last = 20) {
-  df |>
-    arrange(datum) |>
-    slice_tail(n = n_last) |>
-    count(registration, sort = TRUE) |>
-    mutate(share = n / sum(n), window = paste0("last_", n_last))
+
+
+m <- data |> 
+  filter(between(arr_delay_min, -200, 200) ) |> 
+  summarise(m = mean(arr_delay_min, na.rm = TRUE)) |> 
+  pull(m)
+
+data |>
+  filter(between(arr_delay_min, -200, 200) ) |> 
+  ggplot(aes(x = arr_delay_min)) +
+  geom_histogram() +
+  geom_vline(xintercept = m, linetype = "dashed", linewidth = 1) +
+  annotate("text", x = m, y = Inf, label = round(m, 1), vjust = 1.2) +
+  theme_plex() +
+  labs(x = "Arrival Delay in min", y = "Count" )
+```
+:::
+
+That looks even better, considering the delay of departure. On average, the flight arrives only 9.2 minutes after scheduled arrival, with more cases even less. The one case at the very left is caused by the heavily delayed flight (day difference). So what happens if we exclude this from the calculation? The arrival delay goes up to 11.7 minutes, but in many cases even earlier. Which is great!
+
+## Aircraft Registration
+
+According to [aeronews](https://www.aero.de/news-51430/Lufthansa-verkauft-zwei-Boeing-747-8-und-zwei-747-400.html#:~:text=Aktuell%20betreibt%20Lufthansa%20noch%20acht,wird%20Lufthansa%20beide%20Teilflotten%20verkleinern.), Lufhansa operates 19 aircraft of the type Boeing 747-800 and on top 8 747-400 all with a unique registration. In this dataset we had 22 unique registrations - 22 out of potential 27.
+
+Lets investigate, which aircraft is used how often over time.
+
+```{r}
+#| echo: false
+#| message: true
+#| warning: false
+
+data |> 
+  group_by(registration) |> 
+  count(registration, sort = TRUE) |> 
+  ungroup() |> 
+  mutate(registration = fct_reorder(registration, n)) |> 
+  ggplot(aes(x = registration, y = n, label = n)) +
+  geom_col() +
+  labs(
+    y = "Number of flights",
+    x = "Aircraft Registration"
+  ) +
+  theme_minimal() +
+  coord_flip() +
+  theme_plex() +
+  geom_label(size = 3)
+
+
+```
+
+There are few planes, which have been used less than 10-times in the last 362 days to fly from Frankfurt to Newark; the least is D-ABTL.
+
+But there is also two registrations, which are leading: D-ABYJ and D-ABYC.
+
+We are currently looking at the data for one year. My assumption is, that rotation of aircrafts can change over time and therefore, in order to predict the registration I will fly with, the more recent registrations are benefitial. Thats why I want to see the usage pattern by registration.
+
+```{r}
+#| echo: false
+#| message: true
+#| warning: false
+
+data %>%
+  mutate(month = floor_date(datum, "month")) %>%
+  group_by(datum) |> 
+  count(registration, sort = TRUE) |> 
+  group_by(registration) |> 
+  mutate(anzahl_einsaetze = sum(n)) |> 
+  ungroup() |> 
+  mutate(registration = fct_reorder(registration, -anzahl_einsaetze)) |> 
+  ggplot(aes(x = datum, y = n, group = registration))+
+  geom_point() +
+  facet_wrap(vars(registration)) +
+  theme_plex() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_y_continuous(breaks = c(0,1)) +
+  labs(x = "Date", y = element_blank())
+
+```
+
+Each dot in the plot indicates a usage occasion of the aircraft (one flight from FRA to EWR).
+
+And yes, we can see differences. While D-ABYA was used consistently over the year, for example D-ABYQ had longer breaks, but has lately intensified.
+
+## Prediction
+
+To predict the most likely aircraft for 18 Dec even though my dataset ends on 13 Dec, I used a simple Markov transition approach based on the sequence of tail numbers.
+
+First, I estimated how many flights per day are typically recorded in the data (only 1; but just to be sure). From the time gap between 13 Dec and 18 Dec, I derived an approximate number of steps, meaning how many consecutive flights I need to move forward in the sequence.
+
+Next, I built a transition table that captures how often one registration is followed by another, and converted those counts into transition probabilities.
+
+To avoid zero probability cases, I applied a small amount of smoothing.
+
+Finally, I started with the last observed registration on 13 Dec and propagated the probabilities forward by the estimated number of steps. The registration with the highest resulting probability is my best estimate for which aircraft is most likely to operate the flight on 18 Dec.
+
+```{r}
+#| echo: false
+#| message: true
+#| warning: false
+
+library(dplyr)
+library(tidyr)
+
+predict_reg_on_date <- function(df, target_date,
+                                lookback = 200,
+                                alpha = 0.5) {
+  df <- df |>
+    mutate(datum = as.Date(datum)) |>
+    arrange(datum)
+
+  last_date <- max(df$datum, na.rm = TRUE)
+  target_date <- as.Date(target_date)
+  delta_days <- as.integer(target_date - last_date)
+
+  if (delta_days < 1) stop("target_date must be after the last date in the data.")
+
+  # 1) wie viele Flüge pro Tag sind im Datensatz (im Mittel)?
+  flights_per_day <- df |>
+    count(datum) |>
+    summarise(m = mean(n), .groups = "drop") |>
+    pull(m)
+
+  k <- max(1L, as.integer(round(delta_days * flights_per_day)))
+
+  # nur die letzten Beobachtungen zum Schätzen der Transition Matrix
+  df_recent <- df |> slice_tail(n = min(lookback, nrow(df)))
+
+  trans <- df_recent |>
+    mutate(reg_next = lead(registration)) |>
+    filter(!is.na(reg_next)) |>
+    count(registration, reg_next, name = "n")
+
+  states <- sort(unique(c(trans$registration, trans$reg_next)))
+
+  # volle Matrix + Laplace-Smoothing (alpha), damit nichts "totläuft"
+  trans_full <- expand_grid(registration = states, reg_next = states) |>
+    left_join(trans, by = c("registration", "reg_next")) |>
+    mutate(n = replace_na(n, 0) + alpha) |>
+    group_by(registration) |>
+    mutate(p = n / sum(n)) |>
+    ungroup()
+
+  P <- trans_full |>
+    select(registration, reg_next, p) |>
+    pivot_wider(names_from = reg_next, values_from = p) |>
+    arrange(match(registration, states))
+
+  P_mat <- as.matrix(P[, -1, drop = FALSE])
+  rownames(P_mat) <- P$registration
+
+  last_reg <- df |> slice_tail(n = 1) |> pull(registration)
+
+  start <- rep(0, length(states))
+  start[match(last_reg, states)] <- 1
+  dist <- matrix(start, nrow = 1)
+
+  for (i in seq_len(k)) dist <- dist %*% P_mat
+
+  probs <- tibble(registration = states, p = as.numeric(dist)) |>
+    arrange(desc(p))
+
+  list(
+    last_date = last_date,
+    target_date = target_date,
+    delta_days = delta_days,
+    flights_per_day = flights_per_day,
+    k_steps = k,
+    last_reg = last_reg,
+    probs = probs,
+    top = probs |> slice(1)
+  )
 }
 
-pred_10 <- predict_from_last_n(data, 10)
-pred_20 <- predict_from_last_n(data, 20)
-pred_30 <- predict_from_last_n(data, 30)
-
-bind_rows(pred_10, pred_20, pred_30) |>
-  group_by(window) |>
-  slice_head(n = 5) |>
-  ungroup()
-
-
-
-bind_rows(pred_10, pred_20, pred_30) |>
-  slice_max(share, n = 8, with_ties = TRUE) |>
-  ggplot(aes(x = fct_reorder(registration, share), y = share, fill = window)) +
-  geom_col(position = "dodge") +
-  coord_flip() +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  labs(
-    title = "Most likely aircraft by recent windows",
-    x = NULL,
-    y = "Share of flights"
-  ) +
-  theme_minimal()
+res <- predict_reg_on_date(data, "2025-12-18")
+res$top
 
 ```
 
-```{r}
-stability <- data |>
-  arrange(datum) |>
-  mutate(reg_next = lead(registration)) |>
-  summarise(
-    prob_same_next_flight = mean(registration == reg_next, na.rm = TRUE)
-  )
+We see at the very top, there were 22 distinct registrations, which gives us a propability of 1/22 (4.5%) per registration being next, while totally ignoring, that usage patterns of aircraft obviously change over the course of the year and that there is 27 747's.
 
-
-stability
-
-
-transitions <- data |>
-  arrange(datum) |>
-  mutate(reg_next = lead(registration)) |>
-  filter(!is.na(reg_next)) |>
-  count(registration, reg_next, sort = TRUE)
-
-
-
-transitions |>
-  group_by(registration) |>
-  mutate(p = n / sum(n)) |>
-  ungroup() |>
-  slice_max(p, n = 1, with_ties = FALSE) |>
-  arrange(desc(p)) |>
-  ggplot(aes(x = fct_reorder(registration, p), y = p)) +
-  geom_col() +
-  coord_flip() +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  labs(
-    title = "For each registration: most likely next registration",
-    x = NULL,
-    y = "Transition probability"
-  ) +
-  theme_minimal()
-```
-
-```{r}
-overall <- data |>
-  count(registration, sort = TRUE) |>
-  mutate(overall_share = n / sum(n)) |>
-  select(registration, overall_share)
-
-recent20 <- predict_from_last_n(data, 20) |>
-  select(registration, recent_share = share)
-
-pick <- full_join(overall, recent20, by = "registration") |>
-  replace_na(list(overall_share = 0, recent_share = 0)) |>
-  mutate(score = 0.5 * overall_share + 0.5 * recent_share) |>
-  arrange(desc(score))
-
-pick |> slice_head(n = 10)
-```
+According to my approach, the propability is slightly higher: **with 6.5% it will be D-ABYI**. Nothing I would bet on, but curious to see, what happens.
