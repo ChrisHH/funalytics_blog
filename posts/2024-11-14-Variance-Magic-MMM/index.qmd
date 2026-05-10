@@ -119,7 +119,7 @@ data <- data.frame(
 ```{r}
 
 data %>% 
-  ggplot(aes(x = week, y = ad_spend)) +
+  ggplot(aes(x = week, y = sales)) +
   geom_line() +
   labs(y = "Sales", x = "Week") +
   scale_y_continuous(labels = scales::dollar_format(prefix = "€"), limits = c(0,NA))
